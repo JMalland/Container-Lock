@@ -1,13 +1,7 @@
 ll.registerPlugin("Crop Protect", "Make crops easier to farm, and prevent accidential destruction.", [1,0,0], {"Author": "JTM"})
-const http = require('http')
-var config = null
-log("Started CropProtect.js Plugin")
-http.get("https://raw.githubusercontent.com/JMalland/LiteLoaderBDS-Plugins/main/Crop%20Protect/config.json").on('end', (response) => {
-    config = new JsonConfigFile("plugins/LLCropProtect/config.json", response.data)
-    var crops = config.get("crops") // Set the crop storage values
-    log("Loaded CropProtect config.json")
-    initializeListeners() // Create the event listeners to run the plugin
-})
+crops = new JsonConfigFile("plugins/LLCropProtect/config.json", "") // Import the crops configuration
+log("Loaded CropProtect config.json")
+initializeListeners() // Create the event listeners to run the plugin
 
 // var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
 
@@ -234,16 +228,116 @@ function useItemOn(player, item, block) { // Player right clicked a block
                     targets.push(target_block.pos) // Add to list of checked targets
                     if (breakCrop(crop, target_block)) { // Harvested the crop
                         count ++ // Increase the counter
-                    }
-                }
+                    } }
                 if (target_block.name == "minecraft:" + crop.origin && !includes(origins, target_block.pos)) { // Found connected origin block
-                    origins.push(target_block.pos) // Add to list of connected blocks to be checked
+                    origins.push(target_block.pos) // Add to list of connected blocks to be checked 
                 }
             }
         }
     }
     if (count > 0) { // Crops were harvested
         log("Harvested " + count + " of '" + crop.name + "' connected to '" + crop.origin + "'.");
+    }
+}
+
+function initializeConfigs() {
+    const CROP_CONFIGURATION = {
+        "wheat": {
+            "enabled": true,
+            "name": "wheat",
+            "origin": "wheat",
+            "replant": true,
+            "growth": 7,
+            "harvest": [{ "x": 0, "y": 0, "z": 0}, { "x": 1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": 1 }, { "x": -1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": -1 } ]
+        },
+        "carrots": {
+            "enabled": true,
+            "name": "carrots",
+            "origin": "carrots",
+            "replant": true,
+            "growth": 7,
+            "harvest": [ { "x": 0, "y": 0, "z": 0 } ]
+        },
+        "potatoes": {
+            "enabled": true,
+            "name": "potatoes",
+            "origin": "potatoes",
+            "replant": true,
+            "growth": 7,
+            "harvest": [ { "x": 0, "y": 0, "z": 0 } ]
+        },
+        "beetroot": {
+            "enabled": true,
+            "name": "beetroot",
+            "origin": "beetroot",
+            "replant": true,
+            "growth": 7,
+            "harvest": [ { "x": 0, "y": 0, "z": 0 } ]
+        },
+        "pumpkin": {
+            "enabled": true,
+            "name": "pumpkin",
+            "origin": "pumpkin_stem",
+            "replant": false,
+            "growth": 7,
+            "harvest": [ { "x": 1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": 1 }, { "x": -1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": -1 } ]
+        },
+        "melon_block": {
+            "enabled": true,
+            "name": "melon_block",
+            "origin": "melon_stem",
+            "replant": false,
+            "growth": 7,
+            "harvest": [ { "x": 1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": 1 }, { "x": -1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": -1 } ]
+        },
+        "cocoa": {
+            "enabled": true,
+            "name": "cocoa",
+            "origin": "cocoa",
+            "replant": true,
+            "growth": 2,
+            "harvest": [ { "x": 0, "y": 0, "z": 0 } ]
+        },
+        "cactus": {
+            "enabled": true,
+            "name": "cactus",
+            "origin": "cactus",
+            "replant": false,
+            "growth": null,
+            "harvest": [ { "x": 0, "y": 1, "z": 0 } ]
+        },
+        "sugar_cane": {
+            "enabled": true,
+            "name": "reeds",
+            "origin": "reeds",
+            "replant": false,
+            "growth": null,
+            "harvest": [ { "x": 0, "y": 1, "z": 0 } ]
+        },
+        "bamboo": {
+            "enabled": true,
+            "name": "bamboo",
+            "origin": "bamboo",
+            "replant": false,
+            "growth": null,
+            "harvest": [ { "x": 0, "y": 1, "z": 0 } ]
+        },
+        "kelp": {
+            "enabled": true,
+            "name": "kelp",
+            "origin": "kelp",
+            "replant": false,
+            "growth": null,
+            "harvest": [ { "x": 0, "y": 1, "z": 0 } ]
+        },
+        "chorus_plant": {
+            "enabled": true,
+            "name": "chorus_plant",
+            "origin": "chorus_plant",
+            "replant": false,
+            "growth": null,
+            "harvest": [ { "x": 0, "y": 1, "z": 0 }, { "x": 1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": 1 }, { "x": -1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": -1 } ]
+        }
     }
 }
 
