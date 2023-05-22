@@ -1,165 +1,20 @@
 ll.registerPlugin("Crop Protect", "Make crops easier to farm, and prevent accidential destruction.", [1,0,0], {"Author": "JTM"})
-crops = new JsonConfigFile("plugins/LLCropProtect/config.json", "") // Import the crops configuration
-log("Loaded CropProtect config.json")
-initializeListeners() // Create the event listeners to run the plugin
+var crops = {}
+var items = {}
 
-// var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
+initializeConfigs() // Create the initial config Objects
+log("Loaded CropProtect configuration files")
+initializeListeners() // Create the event listeners to run the plugin
+log("Loaded CropProtect event listeners")
+
+log("Crops:")
+log(crops)
+log("Items:")
+log(items)
 
 // Make it so redstone can be used to harvest crops?
 
 // Have right-click harvest configuration per item used
-
-// Grab config.JSON from github
-
-crops = {
-    wheat: {
-        enabled: true,
-        name: "wheat",
-        origin: "wheat",
-        replant: true,
-        growth: 7,
-        harvest: [
-            { x: 0, y: 0, z: 0, }, // Center
-            { x: 1, y: 0, z: 0, },  //
-            { x: 0, y: 0, z: 1, },  //
-            { x: -1, y: 0, z: 0, }, //
-            { x: 0, y: 0, z: -1, }, //
-        ]
-    },
-    carrots: {
-        enabled: true,
-        name: "carrots",
-        origin: "carrots",
-        replant: true,
-        growth: 7,
-        harvest: [
-            { x: 0, y: 0, z: 0, }, // Center
-        ]
-    },
-    potatoes: {
-        enabled: true,
-        name: "potatoes",
-        origin: "potatoes",
-        replant: true,
-        growth: 7,
-        harvest: [
-            { x: 0, y: 0, z: 0, }, // Center
-        ]
-    },
-    beetroot: {
-        enabled: true,
-        name: "beetroot",
-        origin: "beetroot",
-        replant: true,
-        growth: 7,
-        harvest: [
-            { x: 0, y: 0, z: 0, }, // Center
-        ]
-    },
-    pumpkin: {
-        enabled: true,
-        name: "pumpkin",
-        origin: "pumpkin_stem",
-        replant: false,
-        growth: 7,
-        harvest: [
-            { x: 1, y: 0, z: 0, },  //
-            { x: 0, y: 0, z: 1, },  //
-            { x: -1, y: 0, z: 0, }, //
-            { x: 0, y: 0, z: -1, }, //
-        ]
-    },
-    melon_block: {
-        enabled: true,
-        name: "melon_block",
-        origin: "melon_stem",
-        replant: false,
-        growth: 7,
-        harvest: [
-            { x: 1, y: 0, z: 0, },  //
-            { x: 0, y: 0, z: 1, },  //
-            { x: -1, y: 0, z: 0, }, //
-            { x: 0, y: 0, z: -1, }, //
-        ]
-    },
-    cocoa: {
-        enabled: true,
-        name: "cocoa",
-        origin: "cocoa",
-        replant: true,
-        growth: 2,
-        harvest: [
-            { x: 0, y: 0, z: 0, }, // Center
-        ]
-    },
-    cactus: {
-        enabled: true,
-        name: "cactus",
-        origin: "cactus",
-        replant: false,
-        growth: null,
-        harvest: [
-            { x: 0, y: 1, z: 0, }, // Up
-        ]
-    },
-    sugar_cane: {
-        enabled: true,
-        name: "reeds",
-        origin: "reeds",
-        replant: false,
-        growth: null,
-        harvest: [
-            { x: 0, y: 1, z: 0, }, // Up
-        ]
-    },
-    bamboo: {
-        enabled: true,
-        name: "bamboo",
-        origin: "bamboo",
-        replant: false,
-        growth: null,
-        harvest: [
-            { x: 0, y: 1, z: 0, }, // Up
-        ]
-    },
-    kelp: {
-        enabled: true,
-        name: "kelp",
-        origin: "kelp",
-        replant: false,
-        growth: null,
-        harvest: [
-            { x: 0, y: 1, z: 0, }, // Up
-        ]
-    },
-    chorus_plant: {
-        enabled: true,
-        name: "chorus_plant",
-        origin: "chorus_plant",
-        replant: false,
-        growth: null,
-        harvest: [
-            { x: 0, y: 1, z: 0, },  // Up
-            { x: 1, y: 0, z: 0, },  // 
-            { x: 0, y: 0, z: 1, },  // 
-            { x: -1, y: 0, z: 0, }, //
-            { x: 0, y: 0, z: -1, }, //
-        ]
-    }
-}
-
-items = {
-    list: [],
-    onlyAllowUsingItems: false,
-}
-
-log(JSON.stringify(config))
-
-crops = config.get("crops") // Store the crop objects
-
-crops["pumpkin_stem"] = crops["pumpkin"] // Point 'pumpkin_stem' to the 'pumpkin' object
-crops["melon_stem"] = crops["melon_block"] // Point 'melon_stem' to the 'melon_block' object
-crops["reeds"] = crops["sugar_cane"] // Point 'reeds' to the 'sugar_cane' object
 
 function includes(list, pos) {
     for (let item of list) {
@@ -179,35 +34,41 @@ function breakCrop(crop, block) {
     if (!crop.replant) { // Should not replant
         return(true) // Did break the crop
     }
-    object = {} // Create blank object
-    for (var property in state) { // Create the new NBT state for the replanted block
-        if (Object.prototype.hasOwnProperty.call(state, property)) { // Is a valid field within the block state 
-            if (property == "age" || property == "growth") {
-                object[property] = new NbtInt(0) // Reset age/growth
-            }
-            else { // Should determine value type
-                object[property] = new NbtInt(state[property]) // Keep default setting
-            }
-        }
-    }
+    if (state.age != null) state.age = new NbtInt(0) // Reset the block's age
+    if (state.growth != null) state.growth = new NbtInt(0) // Reset the block's growth
+    let object = state // {} // Create blank object
+    //for (var property in state) { // Create the new NBT state for the replanted block
+    //    if (Object.prototype.hasOwnProperty.call(state, property)) { // Is a valid field within the block state 
+    //        if (property == "age" || property == "growth") {
+    //            object[property] = new NbtInt(0) // Reset age/growth
+    //        }
+    //        else { // Should determine value type
+    //            object[property] = new NbtInt(state[property]) // Keep default setting
+    //        }
+    //    }
+    //}
+    //if (state.age != null) state.age = 0 // Reset the block's age
+    //if (state.growth != null) state.growth = 0 // Reset the block's growth
     block.setNbt(new NbtCompound({ // Update the NBT tag of the destroyed block
         "name": new NbtString(block.name),
-        "states": new NbtCompound(object),
+        "states": state,
         "version": block.getNbt().getTag("version"),
     }))
     return(true) // Did break the crop
 }
 
-function useItemOn(player, item, block) { // Player right clicked a block
-    let crop = crops[block.name.substring(10)] // Store the crop info
+function useItemOn(player, tool, block) { // Player right clicked a block
+    let crop = crops.get(block.name.substring(10)) // Store the crop info
+    let item = items.get(block.name.substring(10)) // Store the item usage info
     let state = block.getBlockState() // Store the block state
     if (crop == null) { // The block doesn't exist within the crops definition
         return // Quit the function
     }
     else if (!crop.enabled) { // Auto harvest is disabled for this crop
+        log("Using incorrect item")
         return // Quit the function
     }
-    else if ((items.list.includes(item.name) && !items.onlyAllowUsingItems) || (!items.list.includes(item.name) && items.onlyAllowUsingItems)) { // User didn't use a valid item
+    else if ((!item.canUseItems.includes(tool.name) && !item.canUseItems.length == 0) || (item.unusableItems.includes(tool.name)) || (item.canHarvestUsingSelf == false && tool.name.substring(10) == crop.name)) { // User didn't use a valid item
         log(player.name + ", you can't auto-harvest using '" + item.name + "'!")
         return // Quit the function
     }
@@ -241,7 +102,7 @@ function useItemOn(player, item, block) { // Player right clicked a block
 }
 
 function initializeConfigs() {
-    const CROP_CONFIGURATION = {
+    let CROP_CONFIG = {
         "wheat": {
             "enabled": true,
             "name": "wheat",
@@ -339,6 +200,21 @@ function initializeConfigs() {
             "harvest": [ { "x": 0, "y": 1, "z": 0 }, { "x": 1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": 1 }, { "x": -1, "y": 0, "z": 0 }, { "x": 0, "y": 0, "z": -1 } ]
         }
     }
+    CROP_CONFIG["pumpkin_stem"] = CROP_CONFIG["pumpkin"] // Point 'pumpkin_stem' to the 'pumpkin' object
+    CROP_CONFIG["melon_stem"] = CROP_CONFIG["melon_block"] // Point 'melon_stem' to the 'melon_block' object
+    CROP_CONFIG["reeds"] = CROP_CONFIG["sugar_cane"] // Point 'reeds' to the 'sugar_cane' object
+    let ITEM_CONFIG = {} // Store crop settings per each item
+    for (var property in CROP_CONFIG) { // Go through each crop in the config
+        if (Object.prototype.hasOwnProperty.call(CROP_CONFIG, property)) { // Is a valid crop
+            ITEM_CONFIG[property] = { // Set the crop item settings
+                canUseItems: [], // Items that can harvest with
+                unusableItems: [], // Items that can't harvest with
+                canHarvestUsingSelf: false // Crops can't be harvested while holding the same crop
+            }
+        }
+    }
+    crops = new JsonConfigFile("plugins/LLCropProtect/crops.json", JSON.stringify(CROP_CONFIG)) // Import the crops configuration
+    items = new JsonConfigFile("plugins/LLCropProtect/items.json", JSON.stringify(ITEM_CONFIG)) // Import the items configuration
 }
 
 function initializeListeners() {
