@@ -1,18 +1,8 @@
 ll.registerPlugin("Crop Protect", "Make crops easier to farm, and prevent accidential destruction.", [1,0,0], {"Author": "JTM"})
+
 log("Started CropProtect.js Plugin");
 
-// Add functionality for harvesting bamboo, sugarcane, cactus, and chorus plant
 // Make it so redstone can be used to harvest crops?
-
-/* Make it so it follows all attatched stems of each type, pumpkin / melon, and harvest all attached crops:
-        Find all stems, adding to a recursive list of coords until none found.
-        Then loop through all NSEW coords from each stem, unless in list, and harvest if of same type
-    Do the same for pumpkin / melon blocks, checking if stem is attached (if item isn't stem), then follow.
-*/
-
-// Have right-click harvest configuration per each crop
-
-// Have mass-group harvest configuration per Pumpkin / Melon
 
 // Have right-click harvest configuration per item used
 
@@ -160,6 +150,17 @@ items = {
 
 log(JSON.stringify(crops))
 log(JSON.stringify(items))
+
+var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
+
+log(JSON.stringify(config))
+
+config.init("crops", crops)
+config.set("crops", crops)
+
+log(JSON.stringify(config))
+
+crops = config.get("crops") // Get the crops Object from the config JSON file
 
 crops["pumpkin_stem"] = crops["pumpkin"] // Point 'pumpkin_stem' to the 'pumpkin' object
 crops["melon_stem"] = crops["melon_block"] // Point 'melon_stem' to the 'melon_block' object
