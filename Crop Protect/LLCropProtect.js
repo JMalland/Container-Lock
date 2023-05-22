@@ -4,9 +4,9 @@ var config = null
 log("Started CropProtect.js Plugin")
 http.get("https://raw.githubusercontent.com/JMalland/LiteLoaderBDS-Plugins/main/Crop%20Protect/crops_config.json").on('end', (response) => {
     config = new JsonConfigFile("plugins/LLCropProtect/config.json", response.data)
-    var crops = config.get("crops")
+    var crops = config.get("crops") // Set the crop storage values
     log("Loaded CropProtect config.json")
-    // Initialize event listener
+    initializeListeners() // Create the event listeners to run the plugin
 })
 
 //var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
@@ -247,4 +247,6 @@ function useItemOn(player, item, block) { // Player right clicked a block
     }
 }
 
-mc.listen("onUseItemOn", useItemOn) // Listen for players to right click a block
+function initializeListeners() {
+    mc.listen("onUseItemOn", useItemOn) // Listen for players to right click a block
+}
