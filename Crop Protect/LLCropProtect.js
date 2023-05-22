@@ -2,7 +2,7 @@ ll.registerPlugin("Crop Protect", "Make crops easier to farm, and prevent accide
 const http = require('http')
 var config = null
 log("Started CropProtect.js Plugin")
-http.get("https://raw.githubusercontent.com/JMalland/LiteLoaderBDS-Plugins/main/Crop%20Protect/crops_config.json").on('end', (response) => {
+http.get("https://raw.githubusercontent.com/JMalland/LiteLoaderBDS-Plugins/main/Crop%20Protect/config.json").on('end', (response) => {
     config = new JsonConfigFile("plugins/LLCropProtect/config.json", response.data)
     var crops = config.get("crops") // Set the crop storage values
     log("Loaded CropProtect config.json")
