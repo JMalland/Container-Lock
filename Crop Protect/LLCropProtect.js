@@ -26,7 +26,8 @@ function includes(list, pos) {
 }
 
 function breakCrop(crop, block) {
-    let state = block.getBlockState() // Store the block state
+    let nbt = block.getNbt() // Store the block Nbt
+    let state = nbt.getTag("states") // Store the block state
     if ((state.growth != null && crop.growth > state.growth) || (state.age != null && crop.growth > state.age)) { // Crop isn't fully grown
         return(false) // Did not break the crop
     }
@@ -34,26 +35,9 @@ function breakCrop(crop, block) {
     if (!crop.replant) { // Should not replant
         return(true) // Did break the crop
     }
-    if (state.age != null) state.age = new NbtInt(0) // Reset the block's age
-    if (state.growth != null) state.growth = new NbtInt(0) // Reset the block's growth
-    let object = state // {} // Create blank object
-    //for (var property in state) { // Create the new NBT state for the replanted block
-    //    if (Object.prototype.hasOwnProperty.call(state, property)) { // Is a valid field within the block state 
-    //        if (property == "age" || property == "growth") {
-    //            object[property] = new NbtInt(0) // Reset age/growth
-    //        }
-    //        else { // Should determine value type
-    //            object[property] = new NbtInt(state[property]) // Keep default setting
-    //        }
-    //    }
-    //}
-    //if (state.age != null) state.age = 0 // Reset the block's age
-    //if (state.growth != null) state.growth = 0 // Reset the block's growth
-    block.setNbt(new NbtCompound({ // Update the NBT tag of the destroyed block
-        "name": new NbtString(block.name),
-        "states": state,
-        "version": block.getNbt().getTag("version"),
-    }))
+    if (state.getKeys().includes("age")) state.setTag("age", new NbtInt(0)) // Reset the block's age
+    if (state.getKeys().includes("growth")) state.setTag("growth", new NbtInt(0)) // Reset the block's growth
+    nbt.setTag("states", state) // Update the 'states' tag of the Nbt (means the Nbt is an NbtCompound)
     return(true) // Did break the crop
 }
 
