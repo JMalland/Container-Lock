@@ -9,7 +9,7 @@ http.get("https://raw.githubusercontent.com/JMalland/LiteLoaderBDS-Plugins/main/
     initializeListeners() // Create the event listeners to run the plugin
 })
 
-//var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
+// var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
 
 // Make it so redstone can be used to harvest crops?
 
