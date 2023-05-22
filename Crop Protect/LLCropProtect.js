@@ -156,9 +156,8 @@ var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
 log(JSON.stringify(config))
 
 config.init("crops", crops)
-config.set("crops", crops)
 
-log(JSON.stringify(config))
+log(config.get("crops"))
 
 crops = config.get("crops") // Get the crops Object from the config JSON file
 
