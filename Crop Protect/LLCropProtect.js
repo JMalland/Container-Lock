@@ -1,8 +1,13 @@
 ll.registerPlugin("Crop Protect", "Make crops easier to farm, and prevent accidential destruction.", [1,0,0], {"Author": "JTM"})
-var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
-
-
+const http = require('http')
+var config = null
 log("Started CropProtect.js Plugin");
+http.get("https://raw.githubusercontent.com/JMalland/LiteLoaderBDS-Plugins/main/Crop%20Protect/crops_config.json", (response) => {
+    config = new JsonConfigFile("plugins/LLCropProtect/config.json", response)
+    log("Loaded CropProtect config.json")
+})
+
+//var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
 
 // Make it so redstone can be used to harvest crops?
 
@@ -154,11 +159,7 @@ items = {
 
 log(JSON.stringify(config))
 
-config.init("crops", crops)
-
-log(config.get("crops"))
-
-crops = config.get("crops") // Get the crops Object from the config JSON file
+crops = config.get("crops") // Store the crop objects
 
 crops["pumpkin_stem"] = crops["pumpkin"] // Point 'pumpkin_stem' to the 'pumpkin' object
 crops["melon_stem"] = crops["melon_block"] // Point 'melon_stem' to the 'melon_block' object
