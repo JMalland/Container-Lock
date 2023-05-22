@@ -1,10 +1,14 @@
 ll.registerPlugin("Crop Protect", "Make crops easier to farm, and prevent accidential destruction.", [1,0,0], {"Author": "JTM"})
+var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
+
 
 log("Started CropProtect.js Plugin");
 
 // Make it so redstone can be used to harvest crops?
 
 // Have right-click harvest configuration per item used
+
+// Grab config.JSON from github
 
 crops = {
     wheat: {
@@ -147,11 +151,6 @@ items = {
     list: [],
     onlyAllowUsingItems: false,
 }
-
-log(JSON.stringify(crops))
-log(JSON.stringify(items))
-
-var config = new JsonConfigFile("plugins/LLCropProtect/config.json")
 
 log(JSON.stringify(config))
 
