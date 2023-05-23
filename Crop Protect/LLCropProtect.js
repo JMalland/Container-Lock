@@ -53,8 +53,6 @@ function useItemOn(player, tool, block) { // Player right clicked a block
     let crop = crops.get(block.name.substring(10)) // Store the crop info
     let item = items.get(block.name.substring(10)) // Store the item usage info
     let state = block.getNbt().getTag("states") // Store the block state
-    debug(item)
-    debug(tool.name)
     if (crop == null) { // The block doesn't exist within the crops definition
         return // Quit the function
     }
@@ -62,7 +60,7 @@ function useItemOn(player, tool, block) { // Player right clicked a block
         debug("Auto harvest is disabled for '" + crop.name + "'!")
         return // Quit the function
     }
-    else if (item.unusableItems.includes(tool.name) || (!item.canUseItems.includes(tool.name) && !item.canUseItems.length == 0) || (!item.canHarvestUsingSelf && crops.get(tool.name.toLowerCase()) != null && crops.get(tool.name.toLowerCase()).name == crop.name)) { // User didn't use a valid item
+    else if (item.unusableItems.includes(tool.type.substring(10)) || (!item.canUseItems.includes(tool.type.substring(10)) && !item.canUseItems.length == 0) || (!item.canHarvestUsingSelf && crops.get(tool.type.substring(10)) != null && crops.get(tool.type.substring(10)).name == crop.name)) { // User didn't use a valid item
         debug(player.name + ", you can't auto-harvest using '" + tool.name + "'!")
         return // Quit the function
     }
