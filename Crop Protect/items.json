@@ -1,0 +1,117 @@
+{
+    "wheat": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "carrots": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "potatoes": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "beetroot": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "pumpkin": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "melon_block": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "cocoa": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "nether_wart": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "cactus": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "sugar_cane": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "bamboo": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "kelp": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "chorus_plant": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "pumpkin_stem": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "melon_stem": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "melon_seeds": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "pumpkin_seeds": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "beetroot_seeds": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "cocoa_beans": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "seeds": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "carrot": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "potato": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    },
+    "reeds": {
+        "canUseItems": [],
+        "unusableItems": [],
+        "canHarvestUsingSelf": false
+    }
+}

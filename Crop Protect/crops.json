@@ -10,6 +10,26 @@
                 "x": 0,
                 "y": 0,
                 "z": 0
+            },
+            {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            {
+                "x": -1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": -1
             }
         ]
     },
@@ -127,6 +147,20 @@
             }
         ]
     },
+    "nether_wart": {
+        "enabled": true,
+        "name": "nether_wart",
+        "origin": "nether_wart",
+        "replant": true,
+        "growth": 3,
+        "harvest": [
+            {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            }
+        ]
+    },
     "cactus": {
         "enabled": true,
         "name": "cactus",
@@ -214,6 +248,226 @@
                 "x": 0,
                 "y": 0,
                 "z": -1
+            }
+        ]
+    },
+    "pumpkin_stem": {
+        "enabled": true,
+        "name": "pumpkin",
+        "origin": "pumpkin_stem",
+        "replant": false,
+        "growth": 7,
+        "harvest": [
+            {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            {
+                "x": -1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": -1
+            }
+        ]
+    },
+    "melon_stem": {
+        "enabled": true,
+        "name": "melon_block",
+        "origin": "melon_stem",
+        "replant": false,
+        "growth": 7,
+        "harvest": [
+            {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            {
+                "x": -1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": -1
+            }
+        ]
+    },
+    "melon_seeds": {
+        "enabled": true,
+        "name": "melon_block",
+        "origin": "melon_stem",
+        "replant": false,
+        "growth": 7,
+        "harvest": [
+            {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            {
+                "x": -1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": -1
+            }
+        ]
+    },
+    "pumpkin_seeds": {
+        "enabled": true,
+        "name": "pumpkin",
+        "origin": "pumpkin_stem",
+        "replant": false,
+        "growth": 7,
+        "harvest": [
+            {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            {
+                "x": -1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": -1
+            }
+        ]
+    },
+    "beetroot_seeds": {
+        "enabled": true,
+        "name": "beetroot",
+        "origin": "beetroot",
+        "replant": true,
+        "growth": 7,
+        "harvest": [
+            {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            }
+        ]
+    },
+    "cocoa_beans": {
+        "enabled": true,
+        "name": "cocoa",
+        "origin": "cocoa",
+        "replant": true,
+        "growth": 2,
+        "harvest": [
+            {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            }
+        ]
+    },
+    "seeds": {
+        "enabled": true,
+        "name": "wheat",
+        "origin": "wheat",
+        "replant": true,
+        "growth": 7,
+        "harvest": [
+            {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": 1
+            },
+            {
+                "x": -1,
+                "y": 0,
+                "z": 0
+            },
+            {
+                "x": 0,
+                "y": 0,
+                "z": -1
+            }
+        ]
+    },
+    "carrot": {
+        "enabled": true,
+        "name": "carrots",
+        "origin": "carrots",
+        "replant": true,
+        "growth": 7,
+        "harvest": [
+            {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            }
+        ]
+    },
+    "potato": {
+        "enabled": true,
+        "name": "potatoes",
+        "origin": "potatoes",
+        "replant": true,
+        "growth": 7,
+        "harvest": [
+            {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            }
+        ]
+    },
+    "reeds": {
+        "enabled": true,
+        "name": "reeds",
+        "origin": "reeds",
+        "replant": false,
+        "growth": null,
+        "harvest": [
+            {
+                "x": 0,
+                "y": 1,
+                "z": 0
             }
         ]
     }
