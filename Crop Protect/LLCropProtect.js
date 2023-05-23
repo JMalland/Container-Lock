@@ -60,7 +60,7 @@ function useItemOn(player, tool, block) { // Player right clicked a block
         debug("Auto harvest is disabled for '" + crop.name + "'!")
         return // Quit the function
     }
-    else if (item != null && item.unusableItems.includes(tool.name) || (!item.canUseItems.includes(tool.name) && !item.canUseItems.length == 0) || (!item.canHarvestUsingSelf && crops.get(tool.name.toLowerCase()).name == crop.name)) { // User didn't use a valid item
+    else if (item != null && (item.unusableItems.includes(tool.name) || (!item.canUseItems.includes(tool.name) && !item.canUseItems.length == 0) || (!item.canHarvestUsingSelf && crops.get(tool.name.toLowerCase()).name == crop.name))) { // User didn't use a valid item
         debug(player.name + ", you can't auto-harvest using '" + tool.name + "'!")
         return // Quit the function
     }
