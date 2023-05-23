@@ -2,32 +2,41 @@ ll.registerPlugin("Container Lock", "Allow for players to lock chests and other 
 
 compass = { // Calculate the position in a given direction
     "2": (pos) => { return(new IntPos(pos.x, pos.y, pos.z - 1, pos.dimid)) },
-    "3": (pos) => { return(new IntPos(pos.x + 1, pos.y, pos.z, pos.dimid)) },
-    "4": (pos) => { return(new IntPos(pos.x, pos.y, pos.z + 1, pos.dimid)) },
-    "5": (pos) => { return(new IntPos(pos.x - 1, pos.y, pos.z, pos.dimid)) }
+    "3": (pos) => { return(new IntPos(pos.x, pos.y, pos.z + 1, pos.dimid)) },
+    "4": (pos) => { return(new IntPos(pos.x - 1, pos.y, pos.z, pos.dimid)) },
+    "5": (pos) => { return(new IntPos(pos.x + 1, pos.y, pos.z, pos.dimid)) }
 }
 
-wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped", "crimson"] // List of all wood sign types 
-
-function useItemOn(player, item, block) {
-    if (!item.name.includes("_sign") || !block.hasContainer()) { // Not a sign or container being interacted with
-        return // Quit the function
-    }
-    
-    log(item.name)
-    log(item.type)
-    log(item.variant)
-    log(item.getNbt().toString(1))
-    log(block.name)
-    log(block.type)
-    log(block.variant)
-    log(block.getNbt().toString(1))
-    log(JSON.stringify(block.getContainer()))
-}
+wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped", "crimson"] // List of all wood sign types
 
 function blockChanged(before, after) {
-    log(before.getNbt().toString(1))
+    if (!after.name.includes("_sign")) { // Sign not being placed
+        return // Quit the function
+    }
     log(after.getNbt().toString(1))
+    let nbt = after.getNbt() // Store block nbt
+    let facing = after.getBlockState().facing_direction // Store the direction the sign is facing
+    let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](after.pos)) // Store the block the sign was placed on
+    if (!target_block.hasContainer()) { // Block is not a container
+        log("Isn't Container!")
+        return // Quit the function
+    }
+    log(after.getBlockEntity().getNbt().getTag("FrontText"))
+}
+
+function afterPlace(player, block) {
+    if (!block.name.includes("_sign")) { // Sign not being placed
+        return // Quit the function
+    }
+    let facing = block.getBlockState().facing_direction // Store the direction the sign is facing 
+    let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
+    if (!target_block.hasContainer()) { // Block is not a container
+        log("Isn't Container!")
+        return // Quit the function
+    }
+    let entity = block.getBlockEntity().getNbt() // Store the entity NBT
+    entity.setString("Text", "") // Set the text of the sign, just to trigger the 'blockChanged' function
+    block.getBlockEntity().setNbt(entity) // Update the NBT to trigger the 'blockChanged' function
 }
 
 function openContainer(player, block) {
@@ -62,7 +71,8 @@ function destroyContainer(player, block) {
     // Else, nothing
 
 function initializeListeners() {
-    mc.listen("onBlockChange", blockChanged) // Listen for block change
+    mc.listen("onBlockChanged", blockChanged) // Listen for block change
+    mc.listen("afterPlaceBlock", afterPlace) // Listen for block change
     //mc.listen("onUseItemOn", useItemOn) // Listen for players placing blocks
     mc.listen("onStartDestroyBlock", (player, block) => { // Verify it is a container block being destroyed
         let nbt = block.getNbt() // Store block Nbt
