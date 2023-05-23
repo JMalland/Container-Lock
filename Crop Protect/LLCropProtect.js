@@ -17,7 +17,7 @@ log(items)
 // Have right-click harvest configuration per item used
 
 function debug(message) {
-    if (config.get("debug")) { // Debugging is enabled
+    if (config.get("debug") == true) { // Debugging is enabled
         log(" [DEBUG] " + message)
     }
 }
@@ -227,8 +227,10 @@ function initializeConfigs() {
     }
     let CONFIG = { // Store plugin settings
         "debug": false,
-        "invincibleFarmland": false,
-        "alwaysFertileFarmland": false,
+        "farmland": {
+            "alwaysFertile": false,
+            "noFallDamage": false,
+        }
     }
     crops = new JsonConfigFile("plugins/LLCropProtect/crops.json", JSON.stringify(CROP_CONFIG)) // Import the crops configuration
     items = new JsonConfigFile("plugins/LLCropProtect/items.json", JSON.stringify(ITEM_CONFIG)) // Import the items configuration
