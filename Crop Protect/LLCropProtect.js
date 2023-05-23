@@ -1,4 +1,4 @@
-ll.registerPlugin("Crop Protect", "Make crops easier to farm, and prevent accidential destruction.", [1,0,0], {"Author": "JTM"})
+ll.registerPlugin("Crop Protect", "Make crops easier to farm, and prevent accidential destruction.", [2,4,0], {"Author": "JTM"})
 var crops = {}
 var items = {}
 
