@@ -57,7 +57,7 @@ function useItemOn(player, tool, block) { // Player right clicked a block
         log(player.name + ", you can't auto-harvest using '" + item.name + "'!")
         return // Quit the function
     }
-    else if ((state.getTag("growth") != null && crop.growth > state.getTag("growth")) || (state.getTag("age") != null && crop.growth > state.getTag("age"))) { // Crop isn't fully grown
+    else if (crop.growth > state.getTag("growth") || crop.growth > state.getTag("age")) { // Crop isn't fully grown
         return // Quit the function
     }
     let origins = [block.pos] // Store all connected blocks
