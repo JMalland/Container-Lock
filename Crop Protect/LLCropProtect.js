@@ -86,6 +86,10 @@ function useItemOn(player, tool, block) { // Player right clicked a block
     }
 }
 
+function initializeListeners() {
+    mc.listen("onUseItemOn", useItemOn) // Listen for players to right click a block
+}
+
 function initializeConfigs() {
     let CROP_CONFIG = {
         "wheat": {
@@ -198,10 +202,10 @@ function initializeConfigs() {
             }
         }
     }
+    let CONFIG = { // Store plugin settings
+        "debug": false,
+    }
     crops = new JsonConfigFile("plugins/LLCropProtect/crops.json", JSON.stringify(CROP_CONFIG)) // Import the crops configuration
     items = new JsonConfigFile("plugins/LLCropProtect/items.json", JSON.stringify(ITEM_CONFIG)) // Import the items configuration
-}
-
-function initializeListeners() {
-    mc.listen("onUseItemOn", useItemOn) // Listen for players to right click a block
+    config = new JsonConfigFile("plugins/LLCropProtect/config.json", JSON.stringify(CONFIG)) // Import the plugin configuration
 }
