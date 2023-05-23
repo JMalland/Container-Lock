@@ -16,6 +16,12 @@ log(items)
 
 // Have right-click harvest configuration per item used
 
+function debug(message) {
+    if (config.get("debug")) { // Debugging is enabled
+        log(" [DEBUG] " + message)
+    }
+}
+
 function includes(list, pos) {
     for (let item of list) {
         if (item.x == pos.x && item.y == pos.y && item.z == pos.z && item.dimid == pos.dimid) {
@@ -39,6 +45,7 @@ function breakCrop(crop, block) {
     if (state.getKeys().includes("growth")) state.setTag("growth", new NbtInt(0)) // Reset the block's growth
     nbt.setTag("states", state) // Update the 'states' tag of the Nbt (means the Nbt is an NbtCompound)
     block.setNbt(nbt) // Update the block's Nbt
+    debug("Replanted '" + crop.name + "' at " + block.pos + ".")
     return(true) // Did break the crop
 }
 
@@ -50,14 +57,15 @@ function useItemOn(player, tool, block) { // Player right clicked a block
         return // Quit the function
     }
     else if (!crop.enabled) { // Auto harvest is disabled for this crop
-        //log("Auto harvest is disabled for '" + crop.name + "'!")
+        debug("Auto harvest is disabled for '" + crop.name + "'!")
         return // Quit the function
     }
     else if ((!item.canUseItems.includes(tool.name) && !item.canUseItems.length == 0) || item.unusableItems.includes(tool.name) || (!item.canHarvestUsingSelf && crops.get(tool.name.toLowerCase()).name == crop.name)) { // User didn't use a valid item
-        //log(player.name + ", you can't auto-harvest using '" + tool.name + "'!")
+        debug(player.name + ", you can't auto-harvest using '" + tool.name + "'!")
         return // Quit the function
     }
     else if (crop.growth > state.getTag("growth") || crop.growth > state.getTag("age")) { // Crop isn't fully grown
+        debug("'" + crop.name + "' isn't fully grown at " + block.pos)
         return // Quit the function
     }
     let origins = [block.pos] // Store all connected blocks
@@ -82,7 +90,7 @@ function useItemOn(player, tool, block) { // Player right clicked a block
         }
     }
     if (count > 0) { // Crops were harvested
-        log("Harvested " + count + " of '" + crop.name + "' connected to '" + crop.origin + "'.");
+        debug(player.name + " harvested " + count + " of '" + crop.name + "' connected to '" + crop.origin + "'.");
     }
 }
 
