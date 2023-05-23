@@ -53,7 +53,8 @@ function useItemOn(player, tool, block) { // Player right clicked a block
     let crop = crops.get(block.name.substring(10)) // Store the crop info
     let item = items.get(block.name.substring(10)) // Store the item usage info
     let state = block.getNbt().getTag("states") // Store the block state
-    log(item)
+    debug(item)
+    debug(tool.name)
     if (crop == null) { // The block doesn't exist within the crops definition
         return // Quit the function
     }
