@@ -46,7 +46,7 @@ function breakCrop(crop, block) {
 function useItemOn(player, tool, block) { // Player right clicked a block
     let crop = crops.get(block.name.substring(10)) // Store the crop info
     let item = items.get(block.name.substring(10)) // Store the item usage info
-    let state = block.getNbt().getTag("states") // Store the block state
+    let nbtstate = block.getNbt().getTag("states") // Store the block state
     if (crop == null) { // The block doesn't exist within the crops definition
         return // Quit the function
     }
