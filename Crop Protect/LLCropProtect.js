@@ -27,18 +27,17 @@ function includes(list, pos) {
 
 function breakCrop(crop, block) {
     let nbt = block.getNbt() // Store the block Nbt
-    let state = block.getBlockState() // Store the block state as an Object
-    let nbtstate = nbt.getTag("states") // Store the block state as an NbtCompound
-    if ((nbtstate.getTag("growth") != null && crop.growth > nbtstate.getTag("growth")) || (nbtstate.getTag("age") != null && crop.growth > nbtstate.getTag("age"))) { // Crop isn't fully grown
+    let state = nbt.getTag("states") // Store the block state as an NbtCompound
+    if ((state.getKeys().includes("growth") && crop.growth > state.getTag("growth")) || (state.getKeys.includes("age") && crop.growth > state.getTag("age"))) { // Crop isn't fully grown
         return(false) // Did not break the crop
     }
     block.destroy(true) // Break the crop
     if (!crop.replant) { // Should not replant
         return(true) // Did break the crop
     }
-    if (nbtstate.getKeys().includes("age")) nbtstate.setTag("age", new NbtInt(0)) // Reset the block's age
-    if (nbtstate.getKeys().includes("growth")) nbtstate.setTag("growth", new NbtInt(0)) // Reset the block's growth
-    nbt.setTag("states", nbtstate) // Update the 'states' tag of the Nbt (means the Nbt is an NbtCompound)
+    if (state.getKeys().includes("age")) state.setTag("age", new NbtInt(0)) // Reset the block's age
+    if (state.getKeys().includes("growth")) state.setTag("growth", new NbtInt(0)) // Reset the block's growth
+    nbt.setTag("states", state) // Update the 'states' tag of the Nbt (means the Nbt is an NbtCompound)
     block.setNbt(nbt) // Update the block's Nbt
     return(true) // Did break the crop
 }
@@ -46,7 +45,7 @@ function breakCrop(crop, block) {
 function useItemOn(player, tool, block) { // Player right clicked a block
     let crop = crops.get(block.name.substring(10)) // Store the crop info
     let item = items.get(block.name.substring(10)) // Store the item usage info
-    let nbtstate = block.getNbt().getTag("states") // Store the block state
+    let state = block.getNbt().getTag("states") // Store the block state
     if (crop == null) { // The block doesn't exist within the crops definition
         return // Quit the function
     }
@@ -58,7 +57,7 @@ function useItemOn(player, tool, block) { // Player right clicked a block
         log(player.name + ", you can't auto-harvest using '" + item.name + "'!")
         return // Quit the function
     }
-    else if ((nbtstate.getTag("growth") != null && crop.growth > nbtstate.getTag("growth")) || (nbtstate.getTag("age") != null && crop.growth > nbtstate.getTag("age"))) { // Crop isn't fully grown
+    else if ((state.getTag("growth") != null && crop.growth > state.getTag("growth")) || (state.getTag("age") != null && crop.growth > state.getTag("age"))) { // Crop isn't fully grown
         return // Quit the function
     }
     let origins = [block.pos] // Store all connected blocks
