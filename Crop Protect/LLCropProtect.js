@@ -28,7 +28,7 @@ function includes(list, pos) {
 function breakCrop(crop, block) {
     let nbt = block.getNbt() // Store the block Nbt
     let state = nbt.getTag("states") // Store the block state as an NbtCompound
-    if ((state.getKeys().includes("growth") && crop.growth > state.getTag("growth")) || (state.getKeys.includes("age") && crop.growth > state.getTag("age"))) { // Crop isn't fully grown
+    if ((state.getKeys().includes("growth") && crop.growth > state.getTag("growth")) || (state.getKeys().includes("age") && crop.growth > state.getTag("age"))) { // Crop isn't fully grown
         return(false) // Did not break the crop
     }
     block.destroy(true) // Break the crop
