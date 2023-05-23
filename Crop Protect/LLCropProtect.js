@@ -53,7 +53,7 @@ function useItemOn(player, tool, block) { // Player right clicked a block
         log("Using incorrect item")
         return // Quit the function
     }
-    else if ((!item.canUseItems.includes(tool.name) && !item.canUseItems.length == 0) || item.unusableItems.includes(tool.name) || (!item.canHarvestUsingSelf && crops[tool.name.substring(10)].name == crop.name)) { // User didn't use a valid item
+    else if ((!item.canUseItems.includes(tool.name) && !item.canUseItems.length == 0) || item.unusableItems.includes(tool.name) || (!item.canHarvestUsingSelf && crops.get(tool.name.substring(10)).name == crop.name)) { // User didn't use a valid item
         log(player.name + ", you can't auto-harvest using '" + item.name + "'!")
         return // Quit the function
     }
