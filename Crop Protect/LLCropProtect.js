@@ -227,6 +227,8 @@ function initializeConfigs() {
     }
     let CONFIG = { // Store plugin settings
         "debug": false,
+        "invincibleFarmland": false,
+        "alwaysFertileFarmland": false,
     }
     crops = new JsonConfigFile("plugins/LLCropProtect/crops.json", JSON.stringify(CROP_CONFIG)) // Import the crops configuration
     items = new JsonConfigFile("plugins/LLCropProtect/items.json", JSON.stringify(ITEM_CONFIG)) // Import the items configuration
