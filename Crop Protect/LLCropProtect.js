@@ -156,6 +156,14 @@ function initializeConfigs() {
             "growth": 2,
             "harvest": [ { "x": 0, "y": 0, "z": 0 } ]
         },
+        "nether_wart": {
+            "enabled": true,
+            "name": "nether_wart",
+            "origin": "nether_wart",
+            "replant": true,
+            "growth": 3,
+            "harvest": [ { "x": 0, "y": 0, "z": 0 } ]
+        },
         "cactus": {
             "enabled": true,
             "name": "cactus",
@@ -199,6 +207,13 @@ function initializeConfigs() {
     }
     CROP_CONFIG["pumpkin_stem"] = CROP_CONFIG["pumpkin"] // Point 'pumpkin_stem' to the 'pumpkin' object
     CROP_CONFIG["melon_stem"] = CROP_CONFIG["melon_block"] // Point 'melon_stem' to the 'melon_block' object
+    CROP_CONFIG["melon_seeds"] = CROP_CONFIG["melon_block"] // Point 'melon_seeds' to the 'melon_block' object
+    CROP_CONFIG["pumpkin_seeds"] = CROP_CONFIG["pumpkin"] // Point 'pumpkin_seeds' to the 'pumpkin' object
+    CROP_CONFIG["beetroot_seeds"] = CROP_CONFIG["beetroot"] // Point 'beetroot_seeds' to the 'beetroot' object
+    CROP_CONFIG["cocoa_beans"] = CROP_CONFIG["cocoa"] // Point 'cocoa_beans' to the 'cocoa' object
+    CROP_CONFIG["seeds"] = CROP_CONFIG["wheat"] // Point 'seeds' to the 'wheat' object
+    CROP_CONFIG["carrot"] = CROP_CONFIG["carrots"] // Point 'carrot' to the 'carrots' object
+    CROP_CONFIG["potato"] = CROP_CONFIG["potatoes"] // Point 'potato' to the 'potatoes' object
     CROP_CONFIG["reeds"] = CROP_CONFIG["sugar_cane"] // Point 'reeds' to the 'sugar_cane' object
     let ITEM_CONFIG = {} // Store crop settings per each item
     for (var property in CROP_CONFIG) { // Go through each crop in the config
