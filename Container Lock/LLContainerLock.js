@@ -15,17 +15,20 @@ compass = { // Calculate the position in a given direction
 
 wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped", "crimson"] // List of all wood sign types
 
+// Return the block that should be the sign, assuming the block is apart of a lock
 function getLockSign(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the block is facing
     return(block.hasContainer() ? mc.getBlock(compass[facing](block.pos)) : block) // Return the block that should be the sign
 }
 
+// Return whether or not a block is placed on the front of a container
 function placedOnContainer(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
     return(target_block.hasContainer()) // Return whether or not the sign is placed on a container
 }
 
+// Return whether or not a player has access to the block, even if it isn't a lock
 function validateLock(player, block) {
     let access = storage.get(block.pos.toString()) // Store the lock access list
     if (block.name.includes("_sign") && access != null) { // The block could be apart of a lock
@@ -38,6 +41,7 @@ function validateLock(player, block) {
     return("access") // Quit the function
 }
 
+// Create the lock after text is written by the player or the initial placement event
 function blockChanged(before, after) {
     if (!after.name.includes("_sign")) { // Sign not being placed
         return // Quit the function
@@ -66,6 +70,7 @@ function blockChanged(before, after) {
     log("Created access tag and updated sign NBT.")
 }
 
+// Create the sign text NBT after a sign is first placed on a container
 function afterPlace(player, block) {
     if (!block.name.includes("_sign") || !placedOnContainer(block)) { // Sign not being placed
         return // Quit the function
@@ -76,27 +81,7 @@ function afterPlace(player, block) {
     log("Updated sign text.")
 }
 
-// Need function for user placing a sign --> "onUseItem"
-    // If sign is hanging
-        // Get block behind sign facing
-        // If container behind sign is facing the right way
-            // Parse the sign for '[' + username + ']'
-            // Add NBT tag 'access' to container states, and add username(s) to 'access'
-        // Else, nothing
-    // Else, nothing
-
-// Need function for opening a container --> "onOpenContainer"
-    // If container states contains an 'access' state
-        // If user within 'access', return(true)
-        // Else, return(false)
-    // Else, return(true)
-
-// Need to check if player is destroying a sign. --> "onStartDestroyBlock"
-    // If destroying sign, check if it is on a chest, then check the chest's NBT for 'access'.
-        // If user within 'access', return(true)
-        // Else, return(false)
-    // Else, nothing
-
+// Create the event listeners to run the plugin
 function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
