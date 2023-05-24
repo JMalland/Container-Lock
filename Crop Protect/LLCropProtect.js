@@ -77,15 +77,14 @@ function useItemOn(player, tool, block) { // Player right clicked a block
             if (includes(targets, target_block.pos)) { // The block was harvested, or didn't need to be
                 continue // Skip this block
             }
-            else { // The block has yet to be harvested and/or checked
-                if (target_block.name == "minecraft:" + crop.name && crop.name == crop.origin) { // Found connected target
-                    targets.push(target_block.pos) // Add to list of checked targets
-                    if (breakCrop(crop, target_block)) { // Harvested the crop
-                        count ++ // Increase the counter
-                    } }
-                if (target_block.name == "minecraft:" + crop.origin && !includes(origins, target_block.pos)) { // Found connected origin block
-                    origins.push(target_block.pos) // Add to list of connected blocks to be checked 
+            if (target_block.name == "minecraft:" + crop.name && mc.getBlock(origins[i]).name == "minecraft:" + crop.origin) { // Found connected target
+                targets.push(target_block.pos) // Add to list of checked targets
+                if (breakCrop(crop, target_block)) { // Harvested the crop
+                    count ++ // Increase the counter
                 }
+            }
+            if (target_block.name == "minecraft:" + crop.origin && !includes(origins, target_block.pos)) { // Found connected origin block
+                origins.push(target_block.pos) // Add to list of connected blocks to be checked 
             }
         }
     }
