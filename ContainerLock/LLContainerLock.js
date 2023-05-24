@@ -17,8 +17,10 @@ wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped",
 
 function validateLock(player, block) {
     let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
-    let target_block = mc.getBlock(compass[facing](block.pos)) // Store the block in front of the block
-    // Get target block based on if block is sign / chest
+    block = block.hasinerlt value of the target block
+    if (block.hasContainer()) { // Block is a container block
+        target_block = mc.getBlock(compass[facing](block.pos)) // Store the block in front of the container
+    }
     if (block.name.includes("_sign") || (target_block != null && target_block.name.includes("_sign"))) { // A block could be apart of a lock
         if (target_block != null && storage.get(target_block.pos.toString()) != null) { // The target block is the sign part of a lock 
             block = target_block // Update the block being checked
