@@ -111,14 +111,10 @@ function initializeListeners() {
         if (authenticate == "locked") { // Player doesn't have access
             return(false) // Quit the function
         }
-        else if (authenticate == null) { // Block is not apart of a lock
-            return(true) // Quit the function
-        }
-        else { // The authentication returned the position of the sign within the lock
+        else if (authenticate != null) { // Block is apart of a lock, and player has access
             storage.delete(authenticate.toString()) // Remove the lock from storage
-            mc.getBlock(authenticate).destroy(true) // Break the sign part of the lock
         }
-        return(false) // Quit the function
+        return(true) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
 }
 
