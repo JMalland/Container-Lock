@@ -1,0 +1,8 @@
+{
+    "WarnSelfLockout": true, // Warn users if they will lock themselves out of a chest
+    "AllowSelfLockout": true, // Allow users to lock themselves out of a chest
+    "WarnAccessDenial": true, // Tell the user if they don't have access
+    "PlayerGreifing": false, // Prevent players from breaking locks
+    "MobGreifing": false, // Prevent mobs from breaking locks
+    "AdminGreifing": false, // Prevent admins from breaking locks
+}
