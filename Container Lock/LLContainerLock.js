@@ -101,12 +101,12 @@ function afterPlace(player, block) {
     // Else, nothing
 
 function initializeListeners() {
-    mc.listen("onBlockChanged", blockChanged) // Listen for block change
-    mc.listen("afterPlaceBlock", afterPlace) // Listen for block change
-    mc.listen("onOpenContainer", (player, block) => {
+    mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
+    mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
+    mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
         return(validateLock(player, block) != "locked")
-    }) // Listen for player opening container
-    mc.listen("onDestroyBlock", (player, block) => {
+    })
+    mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         let authenticate = validateLock(player, block) // Validate the player's access to the lock
         if (authenticate == "locked") { // Player doesn't have access
             return(false) // Quit the function
