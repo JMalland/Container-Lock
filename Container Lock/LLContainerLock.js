@@ -18,7 +18,13 @@ wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped",
 // Return the block that should be the sign, assuming the block is apart of a lock
 function getLockSign(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the block is facing
-    return(block.hasContainer() ? mc.getBlock(compass[facing](block.pos)) : block) // Return the block that should be the sign
+    if (block.hasContainer()) { // Block is a container block, not the sign
+        block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store what should be the sign block
+    }
+    if (!block.name.includes("_sign")) { // Block is not a sign
+        return(null) // Return nothing, since no sign
+    }
+    return(block) // Return the sign block
 }
 
 // Return whether or not a block is placed on the front of a container
@@ -30,8 +36,8 @@ function placedOnContainer(block) {
 
 // Return whether or not a player has access to the block, even if it isn't a lock
 function validateLock(player, block) {
-    let access = storage.get(block.pos.toString()) // Store the lock access list
-    if (block.name.includes("_sign") && access != null) { // The block could be apart of a lock
+    let access = block == null ? block : storage.get(block.pos.toString()) // Store the lock access list
+    if (access != null) { // The block is apart of a lock
         if (!storage.get(block.pos.toString()).includes(player.name) && !(config.get("AdminGreifing") && player.isOP()) { // Player doesn't have access to the chest
             log("You are locked out of this container.")
             return("locked") // Quit the function
