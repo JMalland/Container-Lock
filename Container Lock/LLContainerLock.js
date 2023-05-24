@@ -49,15 +49,11 @@ function validateLock(player, block) {
 
 // Create the lock after text is written by the player or the initial placement event
 function blockChanged(before, after) {
-    if (!after.name.includes("_sign")) { // Sign not being placed
+    if (!after.name.includes("_sign") || !placedOnContainer(after)) { // Sign not being placed
         return // Quit the function
     }
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
-    if (!placedOnContainer(after)) { // Block is not a container
-        log("Isn't container, and can't lock a non-container block.")
-        return // Quit the function
-    }
-    else if (access[0].toLowerCase() != "[lock]" || storage.get(after.pos.toString()) != null) { // The sign already has 'access' players, or isn't meant to lock
+    if (access[0].toLowerCase() != "[lock]" || storage.get(after.pos.toString()) != null) { // The sign already has 'access' players, or isn't meant to lock
         return // Quit the function
     }
     for (let i=1; i<access.length; i++) { // Go through each player with access
@@ -96,8 +92,8 @@ function initializeListeners() {
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         let sign_block = getLockSign(block) // Get the sign block that's apart of the lock
         let authenticate = validateLock(player, sign_block) // Validate the player's access to the lock
-        if (authenticate == "access" && storage.get(sign_block.pos.toString()) != null) { // Block is apart of a lock, and player has access
-            storage.delete(sign_block.pos.toString()) // Remove the lock from storage
+        if (authenticate == "access") { // The player has access to the lock
+            storage.delete(sign_block.pos.toString()) // Remove the lock from the storage (runs if not apart of a lock)
         }
         return(authenticate != "locked") // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
