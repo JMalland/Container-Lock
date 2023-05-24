@@ -16,21 +16,28 @@ compass = { // Calculate the position in a given direction
 wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped", "crimson"] // List of all wood sign types
 
 function validateLock(player, block) {
-    let access = storage.get(block.pos.toString()) // Store the access list, if it exists
-    if (!block.name.includes("_sign") || access == null) { // The block being destroyed is not a lock sign
-        log("Not apart of a lock")
-        return(null) // Quit the function
+    let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
+    let target_block = mc.getBlock(compass[facing](block.pos)) // Store the block in front of the block
+    // Get target block based on if block is sign / chest
+    if (block.name.includes("_sign") || (target_block != null && target_block.name.includes("_sign"))) { // A block could be apart of a lock
+        if (target_block != null && storage.get(target_block.pos.toString()) != null) { // The target block is the sign part of a lock 
+            block = target_block // Update the block being checked
+        } // Overwrites if two locked chests are facing each other. Chooses the opposite chest...
+        else if (storage.get(block.pos.toString()) == null) { // The initial block is not apart of a lock
+            log("Not apart of a lock!")
+            return(null) // Quit the function
+        }
+        if (storage.get(block.pos.toString()).includes(player.name) || (config.get("AdminGreifing") && player.isOP())) { // The player is an op, and can access the chest
+            log("You have access to this container.")
+            return(block.pos) // Quit the function
+        }
+        else if (!storage.get(block.pos.toString()).includes(player.name)) { // Player doesn't have access to the chest
+            log("You are locked out of this container.")
+            return("locked") // Quit the function
+        }
     }
-    else if (config.get("AdminGreifing") && player.isOP()) { // The player is an op, and can access the chest
-        log("As an admin, you can greif")
-        return("access") // Quit the function
-    }
-    else if (access != null && !access.includes(player.name)) { // The sign has the 'access' list
-        log(player.name + ", you don't have access to this chest!")
-        return("locked") // Quit the function
-    }
-    log("You have access!")
-    return("access")
+    log("Not apart of a lock!")
+    return(null) // Quit the function
 }
 
 function blockChanged(before, after) {
@@ -104,33 +111,21 @@ function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for block change
     mc.listen("afterPlaceBlock", afterPlace) // Listen for block change
     mc.listen("onOpenContainer", (player, block) => {
-        let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
-        let target_block = mc.getBlock(compass[facing](block.pos)) // Store the sign in front of the container
-        let authenticate = validateLock(player, target_block) // Validate the block is apart of a lock
-        return(authenticate == "access" || authenticate == null) // Return the player's validation
+        return(validateLock(player, block) == "locked")
     }) // Listen for player opening container
     mc.listen("onDestroyBlock", (player, block) => {
-        let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
-        let check_blocks = [block, mc.getBlock(compass[facing](block.pos))] // Store the blocks to check
-        let broken_lock = false // Store whether or not the lock has been broken
-        let lock_exists = false // Store whether or not the lock exists
-        for (let block of check_blocks) { // Go through each block
-            if (block == null) { // Block doesn't exist
-                continue // Keep going
-            }
-            let authenticate = validateLock(player, block) // Validate the block is apart of a lock
-            if (authenticate != null) { // The player's access to the lock was evaluated
-                log("Block is apart of a lock.")
-                if (authenticate == "access") { // Player has access to the lock
-                    storage.delete(block.pos.toString()) // Remove the lock from storage
-                    block.destroy(block.name.includes("_sign")) // Break the block, if it is the sign.
-                    broken_lock = block.name.includes("_sign") || broken_lock // Update the broken lock value
-                    log("Broke lock with '" + block.name + "'.")
-                }
-                lock_exists = true // Update the lock status
-            }
+        let authenticate = validateLock(player, block) // Validate the player's access to the lock
+        if (authenticate == "locked") { // Player doesn't have access
+            return(false) // Quit the function
         }
-        return(!broken_lock && !lock_exists) // Don't break the block unless no lock was broken
+        else if (authenticate == null) { // Block is not apart of a lock
+            return(true) // Quit the function
+        }
+        else { // The authentication returned the position of the sign within the lock
+            storage.delete(authenticate.toString()) // Remove the lock from storage
+            mc.getBlock(authenticate).destroy(true) // Break the sign part of the lock
+        }
+        return(false) // Quit the function
     })
 }
 
