@@ -17,19 +17,10 @@ wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped",
 
 function validateLock(player, block) {
     let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
-    block = block.hasinerlt value of the target block
-    if (block.hasContainer()) { // Block is a container block
-        target_block = mc.getBlock(compass[facing](block.pos)) // Store the block in front of the container
-    }
-    if (block.name.includes("_sign") || (target_block != null && target_block.name.includes("_sign"))) { // A block could be apart of a lock
-        if (target_block != null && storage.get(target_block.pos.toString()) != null) { // The target block is the sign part of a lock 
-            block = target_block // Update the block being checked
-        } // Overwrites if two locked chests are facing each other. Chooses the opposite chest...
-        else if (storage.get(block.pos.toString()) == null) { // The initial block is not apart of a lock
-            log("Not apart of a lock!")
-            return(null) // Quit the function
-        }
-        if (storage.get(block.pos.toString()).includes(player.name) || (config.get("AdminGreifing") && player.isOP())) { // The player is an op, and can access the chest
+    block = block.hasContainer() ? mc.getBlock(compass[facing](block.pos)) : block // Update the block to be whatever's in front of the container
+    let access = storage.get(block.pos.toString()) // Store the lock access list
+    if (block.name.includes("_sign") && access != null) { // The block could be apart of a lock
+        if (access.includes(player.name) || (config.get("AdminGreifing") && player.isOP())) { // The player has access to the chest, or is an OP
             log("You have access to this container.")
             return(block.pos) // Quit the function
         }
@@ -113,7 +104,7 @@ function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for block change
     mc.listen("afterPlaceBlock", afterPlace) // Listen for block change
     mc.listen("onOpenContainer", (player, block) => {
-        return(validateLock(player, block) == "locked")
+        return(validateLock(player, block) != "locked")
     }) // Listen for player opening container
     mc.listen("onDestroyBlock", (player, block) => {
         let authenticate = validateLock(player, block) // Validate the player's access to the lock
