@@ -52,8 +52,7 @@ function blockChanged(before, after) {
     if (!after.name.includes("_sign")) { // Sign not being placed
         return // Quit the function
     }
-    let entity_nbt = after.getBlockEntity().getNbt() // Store the block's parent NBT
-    let access = entity_nbt.getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
+    let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
     if (!placedOnContainer(after)) { // Block is not a container
         log("Isn't container, and can't lock a non-container block.")
         return // Quit the function
