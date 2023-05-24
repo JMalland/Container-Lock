@@ -1,5 +1,11 @@
 ll.registerPlugin("Container Lock", "Allow for players to lock chests and other containers using signs.", [1,0,0], {"Author": "JTM"})
 
+var storage = {}
+var config = {}
+
+initializeConfigs()
+initializeListeners()
+
 compass = { // Calculate the position in a given direction
     "2": (pos) => { return(new IntPos(pos.x, pos.y, pos.z - 1, pos.dimid)) },
     "3": (pos) => { return(new IntPos(pos.x, pos.y, pos.z + 1, pos.dimid)) },
@@ -9,6 +15,24 @@ compass = { // Calculate the position in a given direction
 
 wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped", "crimson"] // List of all wood sign types
 
+function validateLock(player, block) {
+    let access = storage.get(block.pos.toString()) // Store the access list, if it exists
+    if (!block.name.includes("_sign") || access == null) { // The block being destroyed is not a lock sign
+        log("Not apart of a lock")
+        return(null) // Quit the function
+    }
+    else if (config.get("AdminGreifing") && player.isOP()) { // The player is an op, and can access the chest
+        log("As an admin, you can greif")
+        return("access") // Quit the function
+    }
+    else if (access != null && !access.includes(player.name)) { // The sign has the 'access' list
+        log(player.name + ", you don't have access to this chest!")
+        return("locked") // Quit the function
+    }
+    log("You have access!")
+    return("access")
+}
+
 function blockChanged(before, after) {
     if (!after.name.includes("_sign")) { // Sign not being placed
         return // Quit the function
@@ -17,7 +41,7 @@ function blockChanged(before, after) {
     let access = entity_nbt.getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
     let facing = after.getBlockState().facing_direction // Store the direction the sign is facing
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](after.pos)) // Store the block the sign was placed on
-    if (entity_nbt.getTag("access") != null) { // The sign already has 'access' players
+    if (storage.get(after.pos.toString()) != null) { // The sign already has 'access' players
         return // Quit the function
     }
     else if (access[0].toLowerCase() != "[lock]") { // First line references the lock
@@ -34,10 +58,8 @@ function blockChanged(before, after) {
             //after.destroy(true) // Destroy the block
             //return // Quit the function
         }
-        access[i] = new NbtString(access[i]) // Convert the string into an NbtString
     }
-    entity_nbt.setTag("access", new NbtList(access.slice(1))) // Create the 'access' tag for the sign, declaring who has access to the container
-    after.getBlockEntity().setNbt(entity_nbt) // Update the sign's NBT
+    storage.set(after.pos.toString(), access.slice(1)) // Create the list of players with access
     log("Created access tag and updated sign NBT.")
 }
 
@@ -55,33 +77,6 @@ function afterPlace(player, block) {
     entity.setString("Text", "") // Set the text of the sign, just to trigger the 'blockChanged' function
     block.getBlockEntity().setNbt(entity) // Update the NBT to trigger the 'blockChanged' function
     log("Updated sign text.")
-}
-
-function openContainer(player, block) {
-    log("Opened Container!")
-    let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
-    let target_block = mc.getBlock(compass[facing](block.pos)) // Store the sign in front of the container
-    log(target_block.name)
-    let access_list = target_block.getBlockEntity().getNbt().getTag("access") // Store the block's 'access' list
-    if (access_list != null) { // The sign has the 'access' tag
-        let found = false // Store whether or not the player is within the access list
-        for (let i=0; i<access_list.getSize(); i++) { // Get the users stored in the 'access' list
-            found = found || access_list.getTag(i).toString() == player.name // Determine if player was found
-        }
-        if (!found) { // Player was not found within the list
-            log("You don't have access to this chest!")
-            return(false) // Quit the function
-        }
-    }
-    else {
-        log("No Access List!")
-    }
-}
-
-// Should first break sign, even if destroying the chest
-// Second break should work automatically, having the sign removed.
-function destroyContainer(player, block) {
-
 }
 
 // Need function for user placing a sign --> "onUseItem"
@@ -108,8 +103,48 @@ function destroyContainer(player, block) {
 function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for block change
     mc.listen("afterPlaceBlock", afterPlace) // Listen for block change
-    mc.listen("onOpenContainer", openContainer) // Listen for player opening container
-    mc.listen("onStartDestroyBlock", (player, block) => { return })
+    mc.listen("onOpenContainer", (player, block) => {
+        let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
+        let target_block = mc.getBlock(compass[facing](block.pos)) // Store the sign in front of the container
+        let authenticate = validateLock(player, target_block) // Validate the block is apart of a lock
+        return(authenticate == "access" || authenticate == null) // Return the player's validation
+    }) // Listen for player opening container
+    mc.listen("onDestroyBlock", (player, block) => {
+        let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
+        let check_blocks = [block, mc.getBlock(compass[facing](block.pos))] // Store the blocks to check
+        let broken_lock = false // Store whether or not the lock has been broken
+        let lock_exists = false // Store whether or not the lock exists
+        for (let block of check_blocks) { // Go through each block
+            if (block == null) { // Block doesn't exist
+                continue // Keep going
+            }
+            let authenticate = validateLock(player, block) // Validate the block is apart of a lock
+            if (authenticate != null) { // The player's access to the lock was evaluated
+                log("Block is apart of a lock.")
+                if (authenticate == "access") { // Player has access to the lock
+                    storage.delete(block.pos.toString()) // Remove the lock from storage
+                    block.destroy(block.name.includes("_sign")) // Break the block, if it is the sign.
+                    broken_lock = block.name.includes("_sign") || broken_lock // Update the broken lock value
+                    log("Broke lock with '" + block.name + "'.")
+                }
+                lock_exists = true // Update the lock status
+            }
+        }
+        return(!broken_lock && !lock_exists) // Don't break the block unless no lock was broken
+    })
 }
 
-initializeListeners()
+function initializeConfigs() {
+    STORAGE = {
+    }
+    CONFIG = {
+        "WarnSelfLockout": true, // Warn users if they will lock themselves out of a chest
+        "AllowSelfLockout": true, // Allow users to lock themselves out of a chest
+        "WarnAccessDenial": true, // Tell the user if they don't have access
+        "PlayerGreifing": false, // Prevent players from breaking locks
+        "MobGreifing": false, // Prevent mobs from breaking locks
+        "AdminGreifing": false, // Prevent admins from breaking locks
+    }
+    storage = new JsonConfigFile("plugins/LLContainerLock/storage.json", JSON.stringify(STORAGE)) // Import the storage configuration
+    config = new JsonConfigFile("plugins/LLContainerLock/config.json", JSON.stringify(CONFIG)) // Import the settings configuration
+}
