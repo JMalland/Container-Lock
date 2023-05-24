@@ -21,7 +21,10 @@ function blockChanged(before, after) {
         log("Isn't Container!")
         return // Quit the function
     }
-    log(after.getBlockEntity().getNbt().getTag("FrontText"))
+    log(after.getBlockEntity().getNbt().toString(1))
+    log(after.getBlockEntity().getNbt().getKeys())
+    log(after.getBlockEntity().getNbt().getTag("FrontText").getKeys())
+    log(after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text"))
 }
 
 function afterPlace(player, block) {
