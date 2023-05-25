@@ -62,7 +62,8 @@ function blockChanged(before, after) {
                 log("Player '" + i + "' is invalid!")
             }
             if (!config.get("AllowInvalidUser")) { // Break the sign if player is invalid
-                after.destroy(true) // Destroy the block
+                after.destroy(true) // Destroy the block, dropping it
+                mc.setBlock(after.pos, "minecraft:air", 0) // Destroy the sign
                 return // Quit the function
             }
         }
