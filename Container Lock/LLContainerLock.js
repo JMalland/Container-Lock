@@ -56,7 +56,9 @@ function resetLockText(block, force) {
 // Return whether or not a block is placed on the front of a container
 function placedOnContainer(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
+    log("Facing: " + facing)
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
+    log("Target: " + target_block.pos)
     return(target_block.hasContainer()) // Return whether or not the sign is placed on a container
 }
 
