@@ -54,8 +54,14 @@ function getSecondChest(block) {
 }
 
 function resetLockText(block, force) {
+    if (block == null || block.name.includes("wall_sign")) { // Block is not a sign
+        return // Quit the function
+    }
     let entity = block.getBlockEntity().getNbt() // Store the entity NBT
     let list = storage.get(block.pos.toString()) // Store the access list
+    if (list == null) { // Lock doesn't exist
+        return // Quit the function
+    }
     let expected = "[Lock]" // Initial line of the sign's text
     for (let line of list) { // Go through each player with access
         expected += "\n" + line // Add each line
@@ -85,9 +91,11 @@ function validateLock(player, block) {
             log("You are locked out of this container.")
             return("locked") // Quit the function
         }
+        log("You have access to this container.")
+        return("access") // Quit the function
     }
-    log("You have access to this container.")
-    return("access") // Quit the function
+    log("This container is unlocked.")
+    return("unlocked") // Quit the function
 }
 
 // Create the lock after text is written by the player or the initial placement event
@@ -98,7 +106,7 @@ function blockChanged(before, after) {
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
     if (storage.get(after.pos.toString()) != null) { // The sign is already apart of a lock
         resetLockText(after, false) // Reset the text displayed on the lock (checks if text is not right, so not infinite loop)
-        return
+        return // Quit the function
     }
     else if (access[0].toLowerCase() != "[lock]") { // The sign isn't meant to lock
         return // Quit the function
@@ -123,24 +131,28 @@ function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
     mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
-        let entity = block.getBlockEntity().getNbt() // Store the entity NBT
-        let second_block = getSecondChest(block) // Get the second chest connected to this block (assuming it's a chest)
-        return(validateLock(player, getLockSign(block)) != "locked" || validateLock(player, second_block) != "locked") // Allow the player access to the container if not 'locked'
+        return(validateLock(player, getLockSign(block)) != "locked" || validateLock(player, getLockSign(getSecondChest(block))) != "locked") // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         // (only works per that chest, not large chests)
         // Need to fix destroying locked chests breaking apart large ones into 2 singles. 
         let sign_block = getLockSign(block) // Get the sign block that's apart of the lock
         let second_sign = getLockSign(getSecondChest(block)) // Get the second chest connected to this block (assuming it's a chest)
-        let authenticate = validateLock(player, sign_block) // Validate the player's access to the lock
-        if (authenticate == "access" && sign_block != null) { // The player has access to the lock
-            storage.delete(sign_block.pos.toString()) // Remove the lock from the storage (runs if not apart of a lock)
+        let auth_one = validateLock(player, sign_block) // Validate the player's access to the lock
+        let auth_two = validateLock(player, second_sign) // Validate the player's access to the lock
+        if (auth_one == "access" || auth_two == "access") { // The player has access to the lock
+            storage.delete(sign_block.pos.toString()) // Remove the first lock from the storage
+            if (second_sign != null) { // Second sign exists
+                storage.delete(second_sign.pos.toString()) // Remove the second lock from the storage
+                second_sign.destroy(true) // Destroy the second sign
+            }
         }
-        else if (authenticate == "locked") { // The player doesn't have access (but sign appears blank to them)
-            resetLockText(sign_block, true) // Reset the sign's text, since would appear blank to the player
+        else { // The player doesn't have access (but sign appears blank to them)
+            resetLockText(auth_one == "locked" ? sign_block : null, true) // Reset the sign's text
+            resetLockText(auth_two == "locked" ? second_sign : null, true) // Reset the second sign's text
         }
-        log("Lock: " + authenticate)
-        return(authenticate != "locked") // Quit the function, breaking the block since player had access, or wasn't apart of a lock
+        log("Lock: " + (auth_one == "access" || auth_two == "access"))
+        return(auth_one == "access" || auth_two == "access") // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
 }
 
