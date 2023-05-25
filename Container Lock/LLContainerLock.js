@@ -1,4 +1,4 @@
-ll.registerPlugin("Container Lock", "Allow for players to lock chests and other containers using signs.", [2,1,0], {"Author": "JTM"})
+ll.registerPlugin("Container Lock", "Allow for players to lock chests and other containers using signs.", [2,2,0], {"Author": "JTM"})
 
 var storage = {}
 var config = {}
