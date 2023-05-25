@@ -86,10 +86,6 @@ function blockChanged(before, after) {
     else if (access[0].toLowerCase() != "[lock]") { // The sign isn't meant to lock
         return // Quit the function
     }
-    if (!access.includes(player.name)) { // Player isn't included with access to the lock
-        // Create WarnSelfLockout
-        // Create AllowSelfLockout
-    }
     storage.set(after.pos.toString(), access.slice(1)) // Create the list of players with access
     log("Created access tag and updated sign NBT.")
 }
@@ -120,6 +116,7 @@ function initializeListeners() {
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         // (only works per that chest, not large chests)
         // Need to disable destruction for large chests with signs, even if not one on single side.
+        // Need to fix destroying locked chests breaking apart large ones into 2 singles. 
         let sign_block = getLockSign(block) // Get the sign block that's apart of the lock
         let authenticate = validateLock(player, sign_block) // Validate the player's access to the lock
         if (authenticate == "access" && sign_block != null) { // The player has access to the lock
