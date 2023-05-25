@@ -134,19 +134,19 @@ function initializeListeners() {
         let authentication = false // Authenticate the player's access to the lock
         let unlocked = true // Whether or not the container isn't locked
         let signs = [getLockSign(block), getLockSign(getSecondChest(block))] // Store the lock signs (assuming a large chest)
-        for (let i=0; i<signs.length; i++) { // Go through each sign
-            let validate = validateLock(player, signs[i%signs.length]) // Validate the access
+        for (let sign of signs) { // Go through each sign
+            let validate = validateLock(player, sign) // Validate the access
             authentication = authentication || validate == "access" // Evaluate the authentication
             unlocked = unlocked && validate == "unlocked" // Evaluate the lock
         }
-        for (let i=0; i<signs.length; i++) { // Go through each sign (once more)
-            if (signs[i%signs.length] != null) { // The lock exists
+        for (let sign of signs) { // Go through each sign (once more)
+            if (sign != null) { // The lock exists
                 if (authentication) { // Player has access to lock
-                    storage.delete(signs[i%signs.length].pos.toString()) // Remove the lock from storage
-                    signs[i%signs.length].destroy(true) // Destroy the sign
+                    storage.delete(sign.pos.toString()) // Remove the lock from storage
+                    sign.destroy(true) // Destroy the sign
                     continue // Keep going
                 }
-                resetLockText(signs[i%signs.length]) // Reset the sign's text
+                resetLockText(sign) // Reset the sign's text
             }
         }
         log("Lock: " + (unlocked || authentication))
