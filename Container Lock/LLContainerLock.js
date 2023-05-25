@@ -134,21 +134,20 @@ function initializeListeners() {
         let authentication = false // Authenticate the player's access to the lock
         let unlocked = true // Whether or not the container isn't locked
         let signs = [getLockSign(block), getLockSign(getSecondChest(block))] // Store the lock signs (assuming a large chest)
-        for (let i=0; i<signs.length * 2; i++) { // Go through each sign
-            if (i > 1) { // Already verified everything
-                if (signs[i%signs.length] != null) { // The lock exists
-                    if (authentication) { // Player has access to lock
-                        storage.delete(signs[i%signs.length].pos.toString()) // Remove the lock from storage
-                        signs[i%signs.length].destroy(true) // Destroy the sign
-                        continue // Keep going
-                    }
-                    resetLockText(signs[i%signs.length]) // Reset the sign's text
-                }
-                continue // Keep going
-            } // \/ Not yet completely verified
+        for (let i=0; i<signs.length; i++) { // Go through each sign
             let validate = validateLock(player, signs[i%signs.length]) // Validate the access
             authentication = authentication || validate == "access" // Evaluate the authentication
             unlocked = unlocked && validate == "unlocked" // Evaluate the lock
+        }
+        for (let i=0; i<signs.length; i++) { // Go through each sign (once more)
+            if (signs[i%signs.length] != null) { // The lock exists
+                if (authentication) { // Player has access to lock
+                    storage.delete(signs[i%signs.length].pos.toString()) // Remove the lock from storage
+                    signs[i%signs.length].destroy(true) // Destroy the sign
+                    continue // Keep going
+                }
+                resetLockText(signs[i%signs.length]) // Reset the sign's text
+            }
         }
         log("Lock: " + (unlocked || authentication))
         return(unlocked || authentication) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
