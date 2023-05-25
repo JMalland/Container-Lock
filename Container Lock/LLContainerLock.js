@@ -56,6 +56,8 @@ function resetLockText(block, force) {
 
 // Return whether or not a block is placed on the front of a container
 function placedOnContainer(block) {
+    log(block.getNbt().toString())
+    log(block.getBlockEntity().getNbt().toString())
     let facing = parseInt(block.getNbt().getTag("states").getTag("facing_direction").toString()) // Store the direction the sign is facing
     log("Facing: " + facing)
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
@@ -78,7 +80,10 @@ function validateLock(player, block) {
 
 // Create the lock after text is written by the player or the initial placement event
 function blockChanged(before, after) {
-    if (!after.name.includes("wall_sign") || !placedOnContainer(after)) { // Sign not being placed
+    if (!before.name.includes("wall_sign")) { // The first block wasn't a sign, so it doesn't matter
+        return // Quit the function
+    }
+    else if (!after.name.includes("wall_sign") || !placedOnContainer(after)) { // Sign not being placed
         return // Quit the function
     }
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
