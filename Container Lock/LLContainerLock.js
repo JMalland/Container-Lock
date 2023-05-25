@@ -17,6 +17,9 @@ wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped",
 
 // Return the block that should be the sign, assuming the block is apart of a lock
 function getLockSign(block) {
+    if (block == null) { // Block is invalid
+        return(null) // Return nothing, since no sign
+    }
     let facing = block.getBlockState().facing_direction // Store the direction the block is facing
     let new_pos = compass[facing](block.pos) // Store the expected sign position
     if (block.hasContainer()) { // Block is a container block, not the sign
@@ -36,6 +39,20 @@ function getLockSign(block) {
     return(block) // Return the sign block
 }
 
+// Return the chest connected to another chest
+function getSecondChest(block) { 
+    if (block != null || !block.hasContainer()) {
+        return(null) // Return nothing, since not a chest
+    }
+    let entity = block.getBlockEntity().getNbt() // Store the entity NBT
+    let pairx = entity.getTag("pairx") // Store the paired x coordinate
+    let pairz = entity.getTag("pairz") // Store the paired z coordinate
+    if (pairx != null && pairz != null) { // There's a paired chest
+        return(mc.getBlock(parseInt(pairx), block.pos.y, parseInt(pairz), block.pos.dimid)) // Return the paired chest
+    }
+    return(null) // Return nothing, since not a chest
+}
+
 function resetLockText(block, force) {
     let entity = block.getBlockEntity().getNbt() // Store the entity NBT
     let list = storage.get(block.pos.toString()) // Store the access list
@@ -53,6 +70,9 @@ function resetLockText(block, force) {
 // Return whether or not a block is placed on the front of a container
 function placedOnContainer(block) {
     let facing = parseInt(block.getNbt().getTag("states").getTag("facing_direction").toString()) // Store the direction the sign is facing
+    if (facing == null || facing < 2 || facing > 5) { // Facing value is invalid
+        return(false) // Return false, since something is wrong
+    }
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
     return(target_block.hasContainer()) // Return whether or not the sign is placed on a container
 }
@@ -72,10 +92,7 @@ function validateLock(player, block) {
 
 // Create the lock after text is written by the player or the initial placement event
 function blockChanged(before, after) {
-    if (!before.name.includes("wall_sign")) { // The first block wasn't a sign, so it doesn't matter
-        return // Quit the function
-    }
-    else if (!after.name.includes("wall_sign") || !placedOnContainer(after)) { // Sign not being placed
+    if (!after.name.includes("wall_sign") || !placedOnContainer(after)) { // Sign not being placed
         return // Quit the function
     }
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
@@ -107,17 +124,14 @@ function initializeListeners() {
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
     mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
         let entity = block.getBlockEntity().getNbt() // Store the entity NBT
-        let second_block = null // Default value for the second block
-        if (entity.getTag("pairx") != null && entity.getTag("pairz") != null) { // The container is a large chest, of sorts
-            second_block = getLockSign(mc.getBlock(parseInt(entity.getTag("pairx").toString()), block.pos.y, parseInt(entity.getTag("pairz").toString()), block.pos.dimid)) // Get the sign block apart of the second chest
-        }
+        let second_block = getSecondChest(block) // Get the second chest connected to this block (assuming it's a chest)
         return(validateLock(player, getLockSign(block)) != "locked" || validateLock(player, second_block) != "locked") // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         // (only works per that chest, not large chests)
-        // Need to disable destruction for large chests with signs, even if not one on single side.
         // Need to fix destroying locked chests breaking apart large ones into 2 singles. 
         let sign_block = getLockSign(block) // Get the sign block that's apart of the lock
+        let second_sign = getLockSign(getSecondChest(block)) // Get the second chest connected to this block (assuming it's a chest)
         let authenticate = validateLock(player, sign_block) // Validate the player's access to the lock
         if (authenticate == "access" && sign_block != null) { // The player has access to the lock
             storage.delete(sign_block.pos.toString()) // Remove the lock from the storage (runs if not apart of a lock)
