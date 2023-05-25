@@ -131,17 +131,17 @@ function initializeListeners() {
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         // (only works per that chest, not large chests)
         // Need to fix destroying locked chests breaking apart large ones into 2 singles. 
-        let authentication = false // Authenticate the player's access to the lock
+        let authenticated = false // Authenticate the player's access to the lock
         let unlocked = true // Whether or not the container isn't locked
         let signs = [getLockSign(block), getLockSign(getSecondChest(block))] // Store the lock signs (assuming a large chest)
         for (let sign of signs) { // Go through each sign
             let validate = validateLock(player, sign) // Validate the access
-            authentication = authentication || validate == "access" // Evaluate the authentication
+            authenticated = authenticated || validate == "access" // Evaluate the authenticated
             unlocked = unlocked && validate == "unlocked" // Evaluate the lock
         }
         for (let sign of signs) { // Go through each sign (once more)
             if (sign != null) { // The lock exists
-                if (authentication) { // Player has access to lock
+                if (authenticated) { // Player has access to lock
                     storage.delete(sign.pos.toString()) // Remove the lock from storage
                     sign.destroy(true) // Destroy the sign
                     continue // Keep going
@@ -149,8 +149,9 @@ function initializeListeners() {
                 resetLockText(sign) // Reset the sign's text
             }
         }
-        log("Lock: " + (unlocked || authentication))
-        return(unlocked || authentication) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
+        log("Authenticated: " + authenticated)
+        log("Unlocked: " + unlocked)
+        return(unlocked || authenticated) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
 }
 
