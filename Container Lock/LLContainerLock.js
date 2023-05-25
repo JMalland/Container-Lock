@@ -34,9 +34,9 @@ function resetLockText(block) {
     for (let line of list) { // Go through each player with access
         expected += "\n" + line // Add each line
     }
-    log(entity.toArray().toString())
-    if (entity.getTag("Text").toString() != expected) { // Sign doesn't have the proper text
-        entity.setString("Text", expected) // Update the sign's text
+    log(entity.toString())
+    if (entity.getTag("FrontText").getTag("Text").toString() != expected) { // Sign doesn't have the proper text
+        entity.getTag("FrontText").setTag("Text", new NbtString(expected)) // Update the sign's text
         block.getBlockEntity().setNbt(entity) // Update the NBT to display the right text (re-runs this function)
     }
 }
@@ -67,11 +67,12 @@ function blockChanged(before, after) {
         return // Quit the function
     }
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
-    if (access[0].toLowerCase() != "[lock]") { // The sign isn't meant to lock
-        return // Quit the function
-    }
-    else if (storage.get(after.pos.toString()) != null) { // The sign is already apart of a lock
+    if (storage.get(after.pos.toString()) != null) { // The sign is already apart of a lock
         resetLockText(after) // Reset the text displayed on the lock (checks if text is not right, so not infinite loop)
+        return
+    }
+    else if (access[0].toLowerCase() != "[lock]") { // The sign isn't meant to lock
+        return // Quit the function
     }
     // Would Normally Go Through Each User With Access
     storage.set(after.pos.toString(), access.slice(1)) // Create the list of players with access
