@@ -54,7 +54,7 @@ function getSecondChest(block) {
 }
 
 function resetLockText(block, force) {
-    if (block == null || block.name.includes("wall_sign")) { // Block is not a sign
+    if (block == null || !block.name.includes("wall_sign")) { // Block is not a sign
         return // Quit the function
     }
     let entity = block.getBlockEntity().getNbt() // Store the entity NBT
