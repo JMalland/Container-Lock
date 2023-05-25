@@ -56,18 +56,7 @@ function blockChanged(before, after) {
     if (access[0].toLowerCase() != "[lock]" || storage.get(after.pos.toString()) != null) { // The sign already has 'access' players, or isn't meant to lock
         return // Quit the function
     }
-    for (let i=1; i<access.length; i++) { // Go through each player with access
-        if (mc.getPlayer(access[i]) == null) { // The player listed is invalid
-            if (config.get("WarnInvalidUser")) { // Warn the user a player is invalid
-                log("Player '" + i + "' is invalid!")
-            }
-            if (!config.get("AllowInvalidUser")) { // Break the sign if player is invalid
-                after.destroy(true) // Destroy the block, dropping it
-                mc.setBlock(after.pos, "minecraft:air", 0) // Destroy the sign
-                return // Quit the function
-            }
-        }
-    }
+    // Would Normally Go Through Each User With Access
     storage.set(after.pos.toString(), access.slice(1)) // Create the list of players with access
     log("Created access tag and updated sign NBT.")
 }
