@@ -18,21 +18,24 @@ wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped",
 // Return the block that should be the sign, assuming the block is apart of a lock
 function getLockSign(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the block is facing
+    let new_pos = compass[facing](block.pos) // Store the expected sign position
     if (block.hasContainer()) { // Block is a container block, not the sign
-        block = mc.getBlock(compass[facing](block.pos)) // Store what should be the sign block
+        block = mc.getBlock(new_pos) // Store what should be the sign block
     }
-    if (!block.name.includes("_sign") && storage.get(block.pos.toString()) != null) { // Block is not a sign, but should be
-        mc.setBlock(block.pos, "minecraft:wall_sign") // Replace the block
-        let block = mc.getBlock(block.pos) // Update the block
+    if (!block.name.includes("wall_sign") && storage.get(new_pos.toString()) != null) { // Block is not a sign, but should be
+        mc.setBlock(new_pos, "minecraft:wall_sign") // Replace the block
+        block = mc.getBlock(new_pos) // Update the block
         let nbt = block.getNbt() // Store the block NBT
-        nbt.getTag("states").setTag("facing_direction", facing) // Set the facing direction
+        nbt.getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
         block.setNbt(nbt) // Update the nbt
         resetLockText(block, true)
         log("Replaced Block")
     }
-    else if (!block.name.includes("_sign")) { // Block is not a sign
+    else if (!block.name.includes("wall_sign")) { // Block is not a sign
         return(null) // Return nothing, since no sign
     }
+    log(block.getNbt().toString())
+    log(block.getBlockEntity().getNbt().toString())
     return(block) // Return the sign block
 }
 
