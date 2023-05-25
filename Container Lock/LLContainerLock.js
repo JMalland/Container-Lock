@@ -26,8 +26,9 @@ function getLockSign(block) {
     block = block.hasContainer() ? mc.getBlock(new_pos) : block // Store what should be the sign block
     if (!block.name.includes("wall_sign") && storage.get(new_pos.toString()) != null) { // Block is not a sign, but should be
         mc.setBlock(new_pos, "minecraft:wall_sign") // Replace the block
-        let nbt = mc.getBlock(new_pos).getNbt() // Store the block NBT
-        mc.getBlock(new_pos).getNbt().getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
+        block = mc.getBlock(new_pos) // Update the block
+        let nbt = block.getNbt() // Store the block NBT
+        nbt.getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
         block.setNbt(nbt) // Update the nbt
         resetLockText(block, true) // Replace the text on the sign
         log("Replaced Lock Sign!")
