@@ -21,7 +21,16 @@ function getLockSign(block) {
     if (block.hasContainer()) { // Block is a container block, not the sign
         block = mc.getBlock(compass[facing](block.pos)) // Store what should be the sign block
     }
-    if (!block.name.includes("_sign")) { // Block is not a sign
+    if (!block.name.includes("_sign") && storage.get(block.pos.toString()) != null) { // Block is not a sign, but should be
+        mc.setBlock(block.pos, "minecraft:wall_sign") // Replace the block
+        let block = mc.getBlock(block.pos) // Update the block
+        let nbt = block.getNbt() // Store the block NBT
+        nbt.getTag("states").setTag("facing_direction", facing) // Set the facing direction
+        block.setNbt(nbt) // Update the nbt
+        resetLockText(block, true)
+        log("Replaced Block")
+    }
+    else if (!block.name.includes("_sign")) { // Block is not a sign
         return(null) // Return nothing, since no sign
     }
     return(block) // Return the sign block
@@ -63,7 +72,7 @@ function validateLock(player, block) {
 
 // Create the lock after text is written by the player or the initial placement event
 function blockChanged(before, after) {
-    if (!after.name.includes("_sign") || !placedOnContainer(after)) { // Sign not being placed
+    if (!after.name.includes("wall_sign") || !placedOnContainer(after)) { // Sign not being placed
         return // Quit the function
     }
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
@@ -81,7 +90,7 @@ function blockChanged(before, after) {
 
 // Create the sign text NBT after a sign is first placed on a container
 function afterPlace(player, block) {
-    if (!block.name.includes("_sign") || !placedOnContainer(block)) { // Sign not being placed
+    if (!block.name.includes("wall_sign") || !placedOnContainer(block)) { // Sign not being placed
         return // Quit the function
     }
     let entity = block.getBlockEntity().getNbt() // Store the entity NBT
@@ -96,9 +105,17 @@ function initializeListeners() {
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
     // Need to check connected containers, (pairx, pairz)
     mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
-        return(validateLock(player, getLockSign(block)) != "locked") // Allow the player access to the container if not 'locked'
+        log(block.getNbt().toString())
+        log(block.getBlockEntity().getNbt().toString())
+        let entity = block.getBlockEntity().getNbt() // Store the entity NBT
+        let second_block = null // Default value for the second block
+        if (entity.getTag("pairx") != null && entity.getTag("pairz") != null) { // The container is a large chest, of sorts
+            log("Has Second Chest!")
+            second_block = getLockSign(mc.getBlock(parseInt(entity.getTag("pairx").toString()), block.pos.y, parseInt(entity.getTag("pairz").toString()), block.pos.dimid)) // Get the sign block apart of the second chest
+            log(second_block.pos)
+        }
+        return(validateLock(player, getLockSign(block)) != "locked" || validateLock(player, second_block) != "locked") // Allow the player access to the container if not 'locked'
     })
-    // Doesnt work for creative mode!
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         let sign_block = getLockSign(block) // Get the sign block that's apart of the lock
         let authenticate = validateLock(player, sign_block) // Validate the player's access to the lock
