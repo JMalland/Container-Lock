@@ -27,6 +27,19 @@ function getLockSign(block) {
     return(block) // Return the sign block
 }
 
+function resetLockText(block) {
+    let entity = block.getBlockEntity().getNbt() // Store the entity NBT
+    let list = storage.get(block.pos.toString()) // Store the access list
+    let expected = "[Lock]" // Initial line of the sign's text
+    for (let line of list) { // Go through each player with access
+        expected += "\n" + line // Add each line
+    }
+    if (entity.getString("Text") != expected) { // Sign doesn't have the proper text
+        entity.setString("Text", expected) // Update the sign's text
+        block.getBlockEntity().setNbt(entity) // Update the NBT to display the right text (re-runs this function)
+    }
+}
+
 // Return whether or not a block is placed on the front of a container
 function placedOnContainer(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
@@ -53,8 +66,11 @@ function blockChanged(before, after) {
         return // Quit the function
     }
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
-    if (access[0].toLowerCase() != "[lock]" || storage.get(after.pos.toString()) != null) { // The sign already has 'access' players, or isn't meant to lock
+    if (access[0].toLowerCase() != "[lock]") { // The sign isn't meant to lock
         return // Quit the function
+    }
+    else if (storage.get(after.pos.toString()) != null) { // The sign is already apart of a lock
+        resetLockText(after) // Reset the text displayed on the lock (checks if text is not right, so not infinite loop)
     }
     // Would Normally Go Through Each User With Access
     storage.set(after.pos.toString(), access.slice(1)) // Create the list of players with access
@@ -86,6 +102,9 @@ function initializeListeners() {
         let authenticate = validateLock(player, sign_block) // Validate the player's access to the lock
         if (authenticate == "access" && sign_block != null) { // The player has access to the lock
             storage.delete(sign_block.pos.toString()) // Remove the lock from the storage (runs if not apart of a lock)
+        }
+        else if (authenticate == "locked") { // The player doesn't have access (but sign appears blank to them) 
+            resetLockText(sign_block) // Reset the sign's text, since would appear blank to the player
         }
         log("Lock: " + authenticate)
         return(authenticate != "locked") // Quit the function, breaking the block since player had access, or wasn't apart of a lock
