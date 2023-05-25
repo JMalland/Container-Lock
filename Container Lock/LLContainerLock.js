@@ -38,7 +38,7 @@ function placedOnContainer(block) {
 function validateLock(player, block) {
     let access = block == null ? block : storage.get(block.pos.toString()) // Store the lock access list
     if (access != null) { // The block is apart of a lock
-        if (!storage.get(block.pos.toString()).includes(player.name) && !(config.get("AdminGreifing") && player.isOP()) { // Player doesn't have access to the chest
+        if (!storage.get(block.pos.toString()).includes(player.name) && !(config.get("AdminGreifing") && player.isOP())) { // Player doesn't have access to the chest
             log("You are locked out of this container.")
             return("locked") // Quit the function
         }
