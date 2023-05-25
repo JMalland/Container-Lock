@@ -27,6 +27,7 @@ function getLockSign(block) {
         block = mc.getBlock(new_pos) // Update the block
         let nbt = block.getNbt() // Store the block NBT
         nbt.getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
+        log("Chest Face: " + facing)
         block.setNbt(nbt) // Update the nbt
         resetLockText(block, true)
         log("Replaced Block")
@@ -55,7 +56,7 @@ function resetLockText(block, force) {
 
 // Return whether or not a block is placed on the front of a container
 function placedOnContainer(block) {
-    let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
+    let facing = parseInt(block.getNbt().getTag("states").getTag("facing_direction").toString()) // Store the direction the sign is facing
     log("Facing: " + facing)
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
     log("Target: " + target_block.pos)
