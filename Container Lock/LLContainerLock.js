@@ -18,6 +18,7 @@ wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped",
 // Return the block that should be the sign, assuming the block is apart of a lock
 function getLockSign(block) {
     if (block == null) { // Block is invalid
+        log("Block isn't a sign")
         return(null) // Return nothing, since no sign
     }
     let facing = block.getBlockState().facing_direction // Store the direction the block is facing
@@ -31,12 +32,13 @@ function getLockSign(block) {
         resetLockText(block, true) // Replace the text on the sign
         log("Replaced Lock Sign!")
     }
+    log("Wall Sign: " + block.name.includes("wall_sign"))
     return(block.name.includes("wall_sign") ? block : null) // Return the sign block, or nothing if no sign
 }
 
 // Return the chest connected to another chest
 function getSecondChest(block) {
-    if (block != null || !block.hasContainer()) {
+    if (block == null || !block.hasContainer()) {
         return(null) // Return nothing, since not a chest
     }
     let entity = block.getBlockEntity().getNbt() // Store the entity NBT
@@ -126,10 +128,12 @@ function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
     mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
-        return(validateLock(player, getLockSign(block)) != "locked" || validateLock(player, getLockSign(getSecondChest(block))) != "locked") // Allow the player access to the container if not 'locked'
+        return(validateLock(player, getLockSign(block)) == "access" || validateLock(player, getLockSign(getSecondChest(block))) == "access") // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
-        // (only works per that chest, not large chests)
+        if (!block.name.includes("wall_sign") || !block.hasContainer()) { // Block can't be apart of a lock
+            return // Quit the function
+        }
         // Need to fix destroying locked chests breaking apart large ones into 2 singles. 
         let authenticated = false // Authenticate the player's access to the lock
         let unlocked = true // Whether or not the container isn't locked
@@ -144,8 +148,10 @@ function initializeListeners() {
                 if (authenticated) { // Player has access to lock
                     storage.delete(sign.pos.toString()) // Remove the lock from storage
                     sign.destroy(true) // Destroy the sign
+                    log("Removed Lock.")
                     continue // Keep going
                 }
+                log("Reset Lock Text.")
                 resetLockText(sign) // Reset the sign's text
             }
         }
