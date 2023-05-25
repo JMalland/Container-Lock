@@ -24,19 +24,15 @@ function getLockSign(block) {
     }
     if (!block.name.includes("wall_sign") && storage.get(new_pos.toString()) != null) { // Block is not a sign, but should be
         mc.setBlock(new_pos, "minecraft:wall_sign") // Replace the block
-        block = mc.getBlock(new_pos) // Update the block
-        let nbt = block.getNbt() // Store the block NBT
-        nbt.getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
-        log("Chest Face: " + facing)
+        let nbt = mc.getBlock(new_pos).getNbt() // Store the block NBT
+        mc.getBlock(new_pos).getNbt().getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
         block.setNbt(nbt) // Update the nbt
-        resetLockText(block, true)
-        log("Replaced Block")
+        resetLockText(block, true) // Replace the text on the sign
+        log("Replaced Lock Sign!")
     }
     else if (!block.name.includes("wall_sign")) { // Block is not a sign
         return(null) // Return nothing, since no sign
     }
-    log(block.getNbt().toString())
-    log(block.getBlockEntity().getNbt().toString())
     return(block) // Return the sign block
 }
 
@@ -48,20 +44,16 @@ function resetLockText(block, force) {
         expected += "\n" + line // Add each line
     }
     if (force || entity.getTag("FrontText").getTag("Text").toString() != expected) { // Sign doesn't have the proper text
-        log("Updated sign text!")
         entity.getTag("FrontText").setTag("Text", new NbtString(expected)) // Update the sign's text
         block.getBlockEntity().setNbt(entity) // Update the NBT to display the right text (re-runs this function)
+        log("Updated sign text!")
     }
 }
 
 // Return whether or not a block is placed on the front of a container
 function placedOnContainer(block) {
-    log(block.getNbt().toString())
-    log(block.getBlockEntity().getNbt().toString())
     let facing = parseInt(block.getNbt().getTag("states").getTag("facing_direction").toString()) // Store the direction the sign is facing
-    log("Facing: " + facing)
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
-    log("Target: " + target_block.pos)
     return(target_block.hasContainer()) // Return whether or not the sign is placed on a container
 }
 
