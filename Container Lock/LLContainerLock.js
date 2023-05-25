@@ -34,8 +34,6 @@ function resetLockText(block, force) {
     for (let line of list) { // Go through each player with access
         expected += "\n" + line // Add each line
     }
-    log("Expected: " + expected)
-    log("Actual: " + entity.getTag("FrontText").getTag("Text").toString())
     if (force || entity.getTag("FrontText").getTag("Text").toString() != expected) { // Sign doesn't have the proper text
         log("Updated sign text!")
         entity.getTag("FrontText").setTag("Text", new NbtString(expected)) // Update the sign's text
@@ -107,8 +105,7 @@ function initializeListeners() {
         if (authenticate == "access" && sign_block != null) { // The player has access to the lock
             storage.delete(sign_block.pos.toString()) // Remove the lock from the storage (runs if not apart of a lock)
         }
-        else if (authenticate == "locked") { // The player doesn't have access (but sign appears blank to them) 
-            log("Resetting Sign Text") // Reset sign's text
+        else if (authenticate == "locked") { // The player doesn't have access (but sign appears blank to them)
             resetLockText(sign_block, true) // Reset the sign's text, since would appear blank to the player
         }
         log("Lock: " + authenticate)
