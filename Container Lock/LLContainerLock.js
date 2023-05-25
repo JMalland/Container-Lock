@@ -34,7 +34,8 @@ function resetLockText(block) {
     for (let line of list) { // Go through each player with access
         expected += "\n" + line // Add each line
     }
-    if (entity.getString("Text") != expected) { // Sign doesn't have the proper text
+    log(entity.toArray().toString())
+    if (entity.getTag("Text").toString() != expected) { // Sign doesn't have the proper text
         entity.setString("Text", expected) // Update the sign's text
         block.getBlockEntity().setNbt(entity) // Update the NBT to display the right text (re-runs this function)
     }
