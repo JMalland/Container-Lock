@@ -57,7 +57,6 @@ function resetLockText(block, force) {
     if (block == null || !block.name.includes("wall_sign")) { // Block is not a sign
         return // Quit the function
     }
-    let entity = block.getBlockEntity().getNbt() // Store the entity NBT
     let list = storage.get(block.pos.toString()) // Store the access list
     if (list == null) { // Lock doesn't exist
         return // Quit the function
@@ -67,6 +66,7 @@ function resetLockText(block, force) {
         expected += "\n" + line // Add each line
     }
     if (force || entity.getTag("FrontText").getTag("Text").toString() != expected) { // Sign doesn't have the proper text
+        let entity = block.getBlockEntity().getNbt() // Store the entity NBT
         entity.getTag("FrontText").setTag("Text", new NbtString(expected)) // Update the sign's text
         block.getBlockEntity().setNbt(entity) // Update the NBT to display the right text (re-runs this function)
         log("Updated sign text!")
