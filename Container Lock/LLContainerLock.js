@@ -86,7 +86,10 @@ function blockChanged(before, after) {
     else if (access[0].toLowerCase() != "[lock]") { // The sign isn't meant to lock
         return // Quit the function
     }
-    // Would Normally Go Through Each User With Access
+    if (!access.includes(player.name)) { // Player isn't included with access to the lock
+        // Create WarnSelfLockout
+        // Create AllowSelfLockout
+    }
     storage.set(after.pos.toString(), access.slice(1)) // Create the list of players with access
     log("Created access tag and updated sign NBT.")
 }
@@ -106,20 +109,17 @@ function afterPlace(player, block) {
 function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
-    // Need to check connected containers, (pairx, pairz)
     mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
-        log(block.getNbt().toString())
-        log(block.getBlockEntity().getNbt().toString())
         let entity = block.getBlockEntity().getNbt() // Store the entity NBT
         let second_block = null // Default value for the second block
         if (entity.getTag("pairx") != null && entity.getTag("pairz") != null) { // The container is a large chest, of sorts
-            log("Has Second Chest!")
             second_block = getLockSign(mc.getBlock(parseInt(entity.getTag("pairx").toString()), block.pos.y, parseInt(entity.getTag("pairz").toString()), block.pos.dimid)) // Get the sign block apart of the second chest
-            log(second_block.pos)
         }
         return(validateLock(player, getLockSign(block)) != "locked" || validateLock(player, second_block) != "locked") // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
+        // (only works per that chest, not large chests)
+        // Need to disable destruction for large chests with signs, even if not one on single side.
         let sign_block = getLockSign(block) // Get the sign block that's apart of the lock
         let authenticate = validateLock(player, sign_block) // Validate the player's access to the lock
         if (authenticate == "access" && sign_block != null) { // The player has access to the lock
