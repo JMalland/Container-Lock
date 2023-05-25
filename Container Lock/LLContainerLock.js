@@ -19,7 +19,7 @@ wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped",
 function getLockSign(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the block is facing
     if (block.hasContainer()) { // Block is a container block, not the sign
-        block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store what should be the sign block
+        block = mc.getBlock(compass[facing](block.pos)) // Store what should be the sign block
     }
     if (!block.name.includes("_sign")) { // Block is not a sign
         return(null) // Return nothing, since no sign
@@ -86,15 +86,18 @@ function afterPlace(player, block) {
 function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
+    // Need to check connected containers, (pairx, pairz)
     mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
         return(validateLock(player, getLockSign(block)) != "locked") // Allow the player access to the container if not 'locked'
     })
+    // Doesnt work for creative mode!
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         let sign_block = getLockSign(block) // Get the sign block that's apart of the lock
         let authenticate = validateLock(player, sign_block) // Validate the player's access to the lock
-        if (authenticate == "access") { // The player has access to the lock
+        if (authenticate == "access" && sign_block != null) { // The player has access to the lock
             storage.delete(sign_block.pos.toString()) // Remove the lock from the storage (runs if not apart of a lock)
         }
+        log("Lock: " + authenticate)
         return(authenticate != "locked") // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
 }
@@ -106,11 +109,11 @@ function initializeConfigs() {
         "WarnSelfLockout": true, // Warn users if they will lock themselves out of a chest
         "AllowSelfLockout": true, // Allow users to lock themselves out of a chest
         "WarnAccessDenial": true, // Tell the user if they don't have access
-        "AllowInvalidUser": true, // Allow users to give a non-existant user access
-        "WarnInvalidUser": true, // Tell the user if they're giving a non-existant user access
+        "AdminGreifing": false, // Prevent admins from breaking locks
         "PlayerGreifing": false, // Prevent players from breaking locks
         "MobGreifing": false, // Prevent mobs from breaking locks
-        "AdminGreifing": false, // Prevent admins from breaking locks
+        "TNTGreifing": false, // Prevent TNT from breaking locks
+        "FireGreifing": false, // Prevent fire from breaking blocks
     }
     storage = new JsonConfigFile("plugins/LLContainerLock/storage.json", JSON.stringify(STORAGE)) // Import the storage configuration
     config = new JsonConfigFile("plugins/LLContainerLock/config.json", JSON.stringify(CONFIG)) // Import the settings configuration
