@@ -172,8 +172,8 @@ function initializeListeners() {
         }
         if (block.hasContainer() && !has_access) { // Re-Merge the chests if the player broke a container
             for (let chest of lock.chests) {
-                let entity = block.getBlockEntity().getNbt() // Store the entity Nbt
-                setTimeout(() => {block.getBlockEntity().setNbt(entity)}, 500) // Update the block Nbt
+                let entity = chest.getBlockEntity().getNbt() // Store the entity Nbt
+                setTimeout(() => {chest.getBlockEntity().setNbt(entity)}, 500) // Update the block Nbt
             }
         }
         return(has_access && !destroyed) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
