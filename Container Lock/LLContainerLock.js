@@ -104,7 +104,7 @@ function authenticatePlayer(player, signs) {
 
 // Create the lock after text is written by the player or the initial placement event
 function blockChanged(before, after) {
-    if (!after.name.includes("wall_sign") || !placedOnContainer(after)) { // Sign not being placed
+    if (!after.name.includes("wall_sign")) { // Sign not being placed
         return // Quit the function
     }
     else if (storage.get(after.pos.toString()) != null) { // The sign is already apart of a lock
@@ -114,6 +114,10 @@ function blockChanged(before, after) {
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
     if (access[0].toLowerCase() != "[lock]") { // The sign isn't meant to lock
         return // Quit the function
+    }
+    else if (!placedOnContainer(after)) { // The lock-sign isn't placed on a container, or on it's front
+        after.destroy(true) // Break the sign
+        return(false) // Quit the function
     }
     object = { // JSON object to be held in storage.json
         "sign": after.name, // Record the sign type
@@ -125,7 +129,7 @@ function blockChanged(before, after) {
 
 // Create the sign text NBT after a sign is first placed on a container
 function afterPlace(player, block) {
-    if (!block.name.includes("wall_sign") || !placedOnContainer(block)) { // Sign not being placed
+    if (!block.name.includes("wall_sign")) { // Sign not being placed
         return // Quit the function
     }
     let lock = getLockPieces(block) // Store the lock chests/signs if a lock exists
