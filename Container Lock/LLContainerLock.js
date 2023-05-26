@@ -133,6 +133,8 @@ function afterPlace(player, block) {
     }
     let lock = getLockPieces(block) // Store the lock chests/signs if a lock exists
     if (lock.signs[1] != null && !storage.get(lock.signs[1].pos.toString()).list.includes(player.name)) { // A lock exists and the player doesn't have access
+        log("Lock already exists! You're trying to bypass it!")
+        block.destroy(true) // Break the sign
         return(false) // Quit the function
     }
     let entity = block.getBlockEntity().getNbt() // Store the entity NBT
