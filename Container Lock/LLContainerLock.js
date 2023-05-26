@@ -15,6 +15,14 @@ compass = { // Calculate the position in a given direction
 
 wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped", "crimson"] // List of all wood sign types
 
+// Should reimplement getting lock signs and stuff
+function getLockPieces(block) {
+    let facing = block.getBlockState().facing_direction
+    let chest_one = block.hasContainer() ? block : mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Get the first locked chest
+    let chest_two = getSecondChest(chest_one) // Get the second locked chest
+    return([chest_one, chest_two, mc.getBlock(compass[facing](chest_one.pos)), chest_two != null ? mc.getBlock(compass[facing](chest_two.pos)) : null])
+}
+
 // Return the block that should be the sign, assuming the block is apart of a lock
 function getLockSign(block) {
     if (block == null) { // Block is invalid
