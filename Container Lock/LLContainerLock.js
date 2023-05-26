@@ -157,14 +157,13 @@ function initializeListeners() {
         let has_access = authenticatePlayer(player, lock.signs) // Determine if the player has access
         let destroyed = false // Whether or not the lock has been broken
         for (let sign of lock.signs) { // Go through each sign (once more)
-            if (sign != null) { // The lock exists
-                if (has_access && storage.get(sign.pos.toString()) != null) { // Lock exists, and player has access
-                    storage.delete(sign.pos.toString()) // Remove the lock from storage
-                    sign.destroy(true) // Destroy the sign
-                    destroyed = true // Update the destruction
-                    log("Removed Lock.")
-                    continue // Keep going
-                }
+            if (sign != null && has_access) { // The lock exists and the player has access
+                storage.delete(sign.pos.toString()) // Remove the lock from storage
+                sign.destroy(true) // Destroy the sign
+                destroyed = true // Update the destruction
+                log("Removed Lock.")
+            }
+            else if (sign != null) { // The lock exists, but player doesn't have access
                 log("Reset Lock Text.")
                 resetLockText(sign, true) // Reset the sign's text
             }
