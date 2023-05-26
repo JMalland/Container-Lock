@@ -125,6 +125,7 @@ function afterPlace(player, block) {
 }
 
 // Create the event listeners to run the plugin
+// Need to block placing signs on a locked container
 function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
@@ -132,12 +133,13 @@ function initializeListeners() {
         return(validateLock(player, getLockSign(block)) == "access" || validateLock(player, getLockSign(getSecondChest(block))) == "access") // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
-        if (!block.name.includes("wall_sign") || !block.hasContainer()) { // Block can't be apart of a lock
+        if (!block.name.includes("wall_sign") && !block.hasContainer()) { // Block can't be apart of a lock
+            log("Block ignored. Was not sign or container")
             return // Quit the function
         }
-        // Need to fix destroying locked chests breaking apart large ones into 2 singles. 
         let authenticated = false // Authenticate the player's access to the lock
         let unlocked = true // Whether or not the container isn't locked
+        let destroyed = false // Whether or not the lock has been broken
         let signs = [getLockSign(block), getLockSign(getSecondChest(block))] // Store the lock signs (assuming a large chest)
         for (let sign of signs) { // Go through each sign
             let validate = validateLock(player, sign) // Validate the access
@@ -149,6 +151,7 @@ function initializeListeners() {
                 if (authenticated) { // Player has access to lock
                     storage.delete(sign.pos.toString()) // Remove the lock from storage
                     sign.destroy(true) // Destroy the sign
+                    destroyed = true // Update the destruction
                     log("Removed Lock.")
                     continue // Keep going
                 }
@@ -158,7 +161,11 @@ function initializeListeners() {
         }
         log("Authenticated: " + authenticated)
         log("Unlocked: " + unlocked)
-        return(unlocked || authenticated) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
+        if (block.hasContainer()) { // Re-Merge the chests if the block is a container
+            let entity = block.getBlockEntity().getNbt() // Store the entity Nbt
+            setTimeout(() => {block.getBlockEntity().setNbt(entity)}, 500) // Update the block Nbt
+        }
+        return((unlocked || authenticated) && !destroyed) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
 }
 
