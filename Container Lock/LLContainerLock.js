@@ -72,6 +72,7 @@ function resetLockText(block, force) {
 }
 
 // Return whether or not a block is placed on the front of a container
+// Hoppers not placeable
 function placedOnContainer(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
     if (facing == null || facing < 2 || facing > 5) { // Facing value is invalid
