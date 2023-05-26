@@ -170,9 +170,11 @@ function initializeListeners() {
                 resetLockText(sign, true) // Reset the sign's text
             }
         }
-        if (block.hasContainer() && !(has_access && !destroyed)) { // Re-Merge the chests if the block is a container
-            let entity = block.getBlockEntity().getNbt() // Store the entity Nbt
-            setTimeout(() => {block.getBlockEntity().setNbt(entity)}, 500) // Update the block Nbt
+        if (block.hasContainer() && !has_access) { // Re-Merge the chests if the player broke a container
+            for (let chest of lock.chests) {
+                let entity = block.getBlockEntity().getNbt() // Store the entity Nbt
+                setTimeout(() => {block.getBlockEntity().setNbt(entity)}, 500) // Update the block Nbt
+            }
         }
         return(has_access && !destroyed) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
