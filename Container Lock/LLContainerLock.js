@@ -41,7 +41,6 @@ function getLockSign(block) {
         resetLockText(block, true) // Replace the text on the sign
         log("Replaced Lock Sign!")
     }
-    log("Wall Sign: " + block.name.includes("wall_sign"))
     return(block.name.includes("wall_sign") ? block : null) // Return the sign block, or nothing if no sign
 }
 
