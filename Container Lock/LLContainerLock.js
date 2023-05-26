@@ -78,7 +78,8 @@ function placedOnContainer(block) {
         return(false) // Return false, since something is wrong
     }
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
-    return(target_block.hasContainer() && facing == target_block.getBlockState().facing_direction) // Return whether or not the sign is placed on a container
+    let target_facing = target_block.getBlockState().facing_direction // Store the direction the container is facing
+    return(target_block.hasContainer() && facing == (target_facing == null ? facing : target_facing)) // Return whether or not the sign is placed on a container
 }
 
 // Return whether or not a player should have access to a container, based on the lock-signs
