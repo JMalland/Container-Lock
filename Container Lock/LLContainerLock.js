@@ -76,12 +76,12 @@ function resetLockText(block, force) {
 
 // Return whether or not a block is placed on the front of a container
 function placedOnContainer(block) {
-    let facing = parseInt(block.getNbt().getTag("states").getTag("facing_direction").toString()) // Store the direction the sign is facing
+    let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
     if (facing == null || facing < 2 || facing > 5) { // Facing value is invalid
         return(false) // Return false, since something is wrong
     }
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
-    return(target_block.hasContainer()) // Return whether or not the sign is placed on a container
+    return(target_block.hasContainer() && facing == target_block.getBlockState().facing_direction) // Return whether or not the sign is placed on a container
 }
 
 // Return whether or not a player should have access to a container, based on the lock-signs
