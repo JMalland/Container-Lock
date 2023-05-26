@@ -56,9 +56,6 @@ function getSecondChest(block) {
 }
 
 function resetLockText(block, force) {
-    //if (block == null || !block.name.includes("wall_sign")) { // Block is not a sign
-    //    return // Quit the function
-    //}
     let expected = "[Lock]" // Initial line of the sign's text
     if (storage.get(block.pos.toString()) == null) { // The block isn't a lock
         return // Quit the function
