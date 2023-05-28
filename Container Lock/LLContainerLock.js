@@ -1,4 +1,4 @@
-ll.registerPlugin("Container Lock", "Allow for players to lock chests and other containers using signs.", [2,3,0], {"Author": "JTM"})
+ll.registerPlugin("Container Lock", "Allow for players to lock chests and other containers using signs.", [2,3,3], {"Author": "JTM"})
 
 var storage = {}
 var config = {}
@@ -21,7 +21,18 @@ function getLockPieces(block) {
     let chest_one = block.hasContainer() ? block : mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Get the first locked chest
     let object = {} // Store the values in an object. Easier than using '.length%i'
     object.chests = [chest_one, getSecondChest(chest_one)] // Store the chests in an array
-    object.signs = [mc.getBlock(compass[facing](chest_one.pos)), object.chests[1] != null ? mc.getBlock(compass[facing](object.chests[1].pos)) : null] // Store the signs in an array
+    if (object.chests[1] == null && chest_one.getBlockState().facing_direction == null) { // No large chest, and container has no 'facing' direction
+        object.signs = [] // Empty list to store signs
+        for (let i=2; i<=5; i++) { // Go through each cardinal direction
+            object.signs.push(mc.getBlock(compass[i + ""](chest_one.pos))) // Add the N/S/E/W blocks of the chest
+            if (object.signs[i-2].getBlockState().facing_direction != i) { // The sign isn't facing the proper direction (isn't apart of this lock)
+                object.signs[i-2] = null // Erase the sign from the list
+            }
+        }
+    }
+    else { // The container has a 'facing' direction (doesn't matter if large chest or not)
+        object.signs = [mc.getBlock(compass[facing](chest_one.pos)), object.chests[1] != null ? mc.getBlock(compass[facing](object.chests[1].pos)) : null] // Store the signs in an array
+    }
     for (let i=0; i<object.signs.length; i++) { // Go through each sign
         if (object.signs[i] != null) { // Block exists --> Signs end up null if not lock, or sign
             if (storage.get(object.signs[i].pos.toString()) == null) { // Block isn't apart of a lock
@@ -135,7 +146,7 @@ function afterPlace(player, block) {
         return // Quit the function
     }
     let lock = getLockPieces(block) // Store the lock chests/signs if a lock exists
-    if (lock.signs[1] != null && !storage.get(lock.signs[1].pos.toString()).list.includes(player.name)) { // A lock exists and the player doesn't have access
+    if (!authenticatePlayer(player, lock.signs)) { // A lock exists and the player doesn't have access
         log("Lock already exists! You're trying to bypass it!")
         block.destroy(true) // Break the sign
         return(false) // Quit the function
