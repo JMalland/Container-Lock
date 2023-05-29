@@ -13,14 +13,13 @@ compass = { // Calculate the position in a given direction
     "5": (pos) => { return(new IntPos(pos.x + 1, pos.y, pos.z, pos.dimid)) } // West
 }
 
-wood = ["spruce", "jungle", "acacia", "birch", "dark_oak", "mangrove", "warped", "crimson"] // List of all wood sign types
-
 // Should reimplement getting lock signs and stuff
 function getLockPieces(block) {
     let facing = block.getBlockState().facing_direction
     let chest_one = block.hasContainer() ? block : mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Get the first locked chest
     let object = {} // Store the values in an object. Easier than using '.length%i'
     object.chests = [chest_one, getSecondChest(chest_one)] // Store the chests in an array
+    object.signs = [mc.getBlock(compass[facing](chest_one.pos)), object.chests[1] != null ? mc.getBlock(compass[facing](object.chests[1].pos)) : null] // Store the signs in an array
     if (object.chests[1] == null && chest_one.getBlockState().facing_direction == null) { // No large chest, and container has no 'facing' direction
         object.signs = [] // Empty list to store signs
         for (let i=2; i<=5; i++) { // Go through each cardinal direction
@@ -31,9 +30,6 @@ function getLockPieces(block) {
             }
             object.signs[i - 2] = sign // Add the N/S/E/W block relative to the container
         }
-    }
-    else { // The container has a 'facing' direction (doesn't matter if large chest or not)
-        object.signs = [mc.getBlock(compass[facing](chest_one.pos)), object.chests[1] != null ? mc.getBlock(compass[facing](object.chests[1].pos)) : null] // Store the signs in an array
     }
     for (let i=0; i<object.signs.length; i++) { // Go through each sign
         if (object.signs[i] != null) { // Block exists --> Signs end up null if not lock, or sign
@@ -161,7 +157,6 @@ function afterPlace(player, block) {
 }
 
 // Create the event listeners to run the plugin
-// Need to block placing signs on a locked container
 function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
