@@ -202,6 +202,8 @@ function initializeListeners() {
     })
 }
 
+// Create the configuration files for the plugin
+// Should implement grief prevention
 function initializeConfigs() {
     STORAGE = {
     }
