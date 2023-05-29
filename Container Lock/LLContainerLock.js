@@ -82,7 +82,6 @@ function resetLockText(block, force) {
 }
 
 // Return whether or not a block is placed on the front of a container
-// Hoppers not placeable
 function placedOnContainer(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
     if (facing == null || facing < 2 || facing > 5) { // Facing value is invalid
@@ -157,6 +156,7 @@ function afterPlace(player, block) {
 }
 
 // Create the event listeners to run the plugin
+// Detect hopper absorbtion of items from locked entity. Refuse unless locked by main owner
 function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
