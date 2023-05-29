@@ -19,7 +19,8 @@ function getLockPieces(block) {
     let chest_one = block.hasContainer() ? block : mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Get the first locked chest
     let object = {} // Store the values in an object. Easier than using '.length%i'
     object.chests = [chest_one, getSecondChest(chest_one)] // Store the chests in an array
-    if (object.chests[1] == null && compass[chest_one.getBlockState().facing_direction] == null) { // No large chest, and container has no 'facing' direction
+    object.signs = [mc.getBlock(compass[facing](chest_one.pos)), object.chests[1] != null ? mc.getBlock(compass[facing](object.chests[1].pos)) : null] // Store the signs in an array
+    if (object.chests[1] == null && chest_one.getBlockState().facing_direction == null) { // No large chest, and container has no 'facing' direction
         object.signs = [] // Empty list to store signs
         for (let i=2; i<=5; i++) { // Go through each cardinal direction
             let sign = mc.getBlock(compass[i + ""](chest_one.pos)) // Store the potential sign block
@@ -29,9 +30,6 @@ function getLockPieces(block) {
             }
             object.signs[i - 2] = sign // Add the N/S/E/W block relative to the container
         }
-    }
-    else { // Chest is directional, and has a 'front' face
-        object.signs = [mc.getBlock(compass[facing](chest_one.pos)), object.chests[1] != null ? mc.getBlock(compass[facing](object.chests[1].pos)) : null] // Store the signs in an array
     }
     for (let i=0; i<object.signs.length; i++) { // Go through each sign
         if (object.signs[i] != null) { // Block exists --> Signs end up null if not lock, or sign
@@ -87,12 +85,12 @@ function resetLockText(block, force) {
 // Hoppers not placeable
 function placedOnContainer(block) {
     let facing = block.getBlockState().facing_direction // Store the direction the sign is facing
-    if (compass[facing] == null) { // Facing value is invalid
+    if (facing == null || facing < 2 || facing > 5) { // Facing value is invalid
         return(false) // Return false, since something is wrong
     }
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
     let target_facing = target_block.getBlockState().facing_direction // Store the direction the container is facing
-    return(target_block.hasContainer() && facing == (compass[target_facing] == null ? facing : target_facing)) // Return whether or not the sign is placed on a container
+    return(target_block.hasContainer() && facing == (target_facing == null ? facing : target_facing)) // Return whether or not the sign is placed on a container
 }
 
 // Return whether or not a player should have access to a container, based on the lock-signs
@@ -166,7 +164,6 @@ function initializeListeners() {
         return(authenticatePlayer(player, getLockPieces(block).signs)) // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
-        log(block.name)
         if (!block.name.includes("wall_sign") && !block.hasContainer()) { // Block can't be apart of a lock
             return // Quit the function
         }
