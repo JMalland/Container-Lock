@@ -24,10 +24,12 @@ function getLockPieces(block) {
     if (object.chests[1] == null && chest_one.getBlockState().facing_direction == null) { // No large chest, and container has no 'facing' direction
         object.signs = [] // Empty list to store signs
         for (let i=2; i<=5; i++) { // Go through each cardinal direction
-            object.signs.push(mc.getBlock(compass[i + ""](chest_one.pos))) // Add the N/S/E/W blocks of the chest
-            if (object.signs[i-2].getBlockState().facing_direction != i) { // The sign isn't facing the proper direction (isn't apart of this lock)
-                object.signs[i-2] = null // Erase the sign from the list
+            let sign = mc.getBlock(compass[i + ""](chest_one.pos)) // Store the potential sign block
+            sign.pos = compass[i + ""](chest_one.pos) // Update the PosInt value of the block
+            if (sign.getBlockState().facing_direction != i && sign.getBlockState().facing_direction != null) { // The sign isn't facing the proper direction (isn't apart of this lock)
+                sign = null // Erase the sign from the list
             }
+            object.signs[i - 2] = sign // Add the N/S/E/W block relative to the container
         }
     }
     else { // The container has a 'facing' direction (doesn't matter if large chest or not)
@@ -39,10 +41,11 @@ function getLockPieces(block) {
                 object.signs[i] = null // Erase the block from the list, since irrelevant
             }
             else if (!object.signs[i].name.includes("wall_sign")) { // Block is not a sign, but should be
-                mc.setBlock(compass[facing](object.signs[i].pos), storage.get(object.signs[i].pos.toString()).sign) // Replace the block
-                object.signs[i] = mc.getBlock(compass[facing](object.signs[i].pos)) // Update the block
+                log(object.signs[i].name)
+                mc.setBlock(object.signs[i].pos, storage.get(object.signs[i].pos.toString()).sign) // Replace the block
+                object.signs[i] = mc.getBlock(object.signs[i].pos) // Update the block
                 let nbt = object.signs[i].getNbt() // Store the block NBT
-                nbt.getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
+                nbt.getTag("states").setTag("facing_direction", new NbtInt(object.signs.length > 2 ? i + 2 : facing)) // Set the facing direction
                 object.signs[i].setNbt(nbt) // Update the block NBT
                 resetLockText(object.signs[i], true) // Replace the text on the sign
                 log("Replaced Lock Sign!")
@@ -184,12 +187,19 @@ function initializeListeners() {
                 resetLockText(sign, true) // Reset the sign's text
             }
         }
-        if (block.hasContainer() && !has_access) { // Re-Merge the chests if the player broke a container
-            for (let chest of lock.chests) {
-                let entity = chest.getBlockEntity().getNbt() // Store the entity Nbt
-                setTimeout(() => {chest.getBlockEntity().setNbt(entity)}, 500) // Update the block Nbt
+        setTimeout(() => { // Re-connect all chests in real time
+            lock = getLockPieces(block) // Update the lock pieces (in case changed in 500 ms)
+            for (let chest of lock.chests) { // Go through each chest
+                if (chest == null) { // Chest doesn't exist
+                    continue // Keep going
+                }
+                try {
+                    let entity = chest.getBlockEntity().getNbt() // Store chest NBT
+                    chest.getBlockEntity().setNbt(entity) // Update the chest NBT
+                }
+                catch (e) {} // Do nothing with the caught exception
             }
-        }
+        }, 500)
         return(has_access && !destroyed) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
 }
