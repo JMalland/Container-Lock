@@ -180,7 +180,7 @@ function getExplodedBlocks(pos, radius, maxResist) {
         for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
             for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
                 let block = mc.getBlock(pos.x + x, pos.y + y, pos.z + z, pos.dimid) // Add each block
-                if ((block.name.includes("wall_sign") && !block.hasContainer()) || getAccessList(getLockPieces(block)).length == 0) { // The lock doesn't exist
+                if ((!block.name.includes("wall_sign") && !block.hasContainer()) || getAccessList(getLockPieces(block)).length == 0) { // The lock doesn't exist
                     continue // Keep going
                 }
                 list.push(block) // Add the block 
@@ -240,6 +240,9 @@ function initializeListeners() {
                 for (let block of blocks) { // Go through each block
                     let lock = getLockPieces(block) // Store the lock components
                     for (let chest of lock.chests) { // Go through each chest
+                        if (chest != null) { // Chest is not apart of the lock
+                            continue // Keep going
+                        }
                         try {
                             let entity = chest.getBlockEntity().getNbt() // Store the chest NBT
                             chest.getBlockEntity().setNbt(entity) // Update the chest NBT
@@ -247,6 +250,9 @@ function initializeListeners() {
                         catch (e) {}
                     }
                     for (let sign of lock.signs) { // Go through each sign
+                        if (sign != null) { // Sign is not apart of the lock
+                            continue // Keep going
+                        }
                         try {
                             let entity = sign.getBlockEntity().getNbt() // Store the sign NBT
                             sign.getBlockEntity().setNbt(entity)
