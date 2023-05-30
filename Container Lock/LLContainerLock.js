@@ -19,17 +19,19 @@ function getLockPieces(block) {
     let chest_one = block.hasContainer() ? block : mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Get the first locked chest
     let object = {} // Store the values in an object. Easier than using '.length%i'
     object.chests = [chest_one, getSecondChest(chest_one)] // Store the chests in an array
-    object.signs = [mc.getBlock(compass[facing](chest_one.pos)), object.chests[1] != null ? mc.getBlock(compass[facing](object.chests[1].pos)) : null] // Store the signs in an array
-    if (object.chests[1] == null && chest_one.getBlockState().facing_direction == null) { // No large chest, and container has no 'facing' direction
+    if (object.chests[1] == null && compass[chest_one.getBlockState().facing_direction] == null) { // No large chest, and container has no 'facing' direction
         object.signs = [] // Empty list to store signs
         for (let i=2; i<=5; i++) { // Go through each cardinal direction
-            let sign = mc.getBlock(compass[i + ""](chest_one.pos)) // Store the potential sign block
-            sign.pos = compass[i + ""](chest_one.pos) // Update the PosInt value of the block
-            if (sign.getBlockState().facing_direction != i && sign.getBlockState().facing_direction != null) { // The sign isn't facing the proper direction (isn't apart of this lock)
+            let sign = mc.getBlock(compass[i](chest_one.pos)) // Store the potential sign block
+            sign.pos = compass[i](chest_one.pos) // Update the PosInt value of the block
+            if (compass[sign.getBlockState().facing_direction] == null) { // The sign isn't facing the proper direction (isn't apart of this lock)
                 sign = null // Erase the sign from the list
             }
-            object.signs[i - 2] = sign // Add the N/S/E/W block relative to the container
+            object.signs.push(sign) // Add the N/S/E/W block relative to the container
         }
+    }
+    else { // The lock is using a container with a 'front' side (chest, trapped chest, barrel, etc)
+        object.signs = [mc.getBlock(compass[facing](chest_one.pos)), object.chests[1] != null ? mc.getBlock(compass[facing](object.chests[1].pos)) : null] // Store the signs in an array
     }
     for (let i=0; i<object.signs.length; i++) { // Go through each sign
         if (object.signs[i] != null) { // Block exists --> Signs end up null if not lock, or sign
@@ -65,6 +67,21 @@ function getSecondChest(block) {
     return(null) // Return nothing, since not a chest
 }
 
+// Return the list of players with access
+function getAccessList(lock) {
+    let access_list = [] // Store who has access to the lock
+    for (let sign of lock.signs) { // Go through each sign
+        if (sign == null) { // Not apart of the lock
+            continue // Keep going
+        }
+        for (let player of storage.get(sign.pos.toString()).list) { // Add the players with access
+            access_list.push(player)
+        }
+    }
+    access_list.sort() // Sort the array
+    return(access_list) // Return the array
+}
+
 function resetLockText(block, force) {
     let expected = "[Lock]" // Initial line of the sign's text
     if (storage.get(block.pos.toString()) == null) { // The block isn't a lock
@@ -89,7 +106,7 @@ function placedOnContainer(block) {
     }
     let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
     let target_facing = target_block.getBlockState().facing_direction // Store the direction the container is facing
-    return(target_block.hasContainer() && facing == (target_facing == null ? facing : target_facing)) // Return whether or not the sign is placed on a container
+    return(target_block.hasContainer() && facing == (compass[target_facing] == null ? facing : target_facing)) // Return whether or not the sign is placed on a container
 }
 
 // Return whether or not a player should have access to a container, based on the lock-signs
@@ -97,14 +114,15 @@ function authenticatePlayer(player, signs) {
     let authenticated = false // Authenticate the player's access to the lock
     let unlocked = true // Whether or not the container isn't locked
     for (let sign of signs) { // Go through each sign
-        let access = sign == null ? sign : storage.get(sign.pos.toString()) // Store the lock access list
-        if (access != null) { // The block is apart of a lock
-            if (!access.list.includes(player.name) && !(config.get("AdminGreifing") && player.isOP())) { // Player doesn't have access to the chest
-                authenticated = authenticated || false // Whether or not the player has access to a lock
-            }
-            else {
-                authenticated = true // The player has access, for certain
-            }
+        if (sign == null) { // Sign not apart of lock
+            continue // Keep going
+        }
+        let access = storage.get(sign.pos.toString()) // Store the lock access list
+        if (!access.list.includes(player.name) && !(config.get("AdminGreifing") && player.isOP())) { // Player doesn't have access to the chest
+            authenticated = authenticated || false // Whether or not the player has access to a lock
+        }
+        else {
+            authenticated = true // The player has access, for certain
         }
         unlocked = unlocked && access == null // Whether or not there's a lock on the container
     }
@@ -155,6 +173,23 @@ function afterPlace(player, block) {
     log("Updated sign text.")
 }
 
+function getExplodedBlocks(pos, radius, maxResist) {
+    let list = []
+    log(maxResist)
+    for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
+        for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
+            for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
+                let block = mc.getBlock(pos.x + x, pos.y + y, pos.z + z, pos.dimid) // Add each block
+                if ((block.name.includes("wall_sign") && !block.hasContainer()) || getAccessList(getLockPieces(block)).length == 0) { // The lock doesn't exist
+                    continue // Keep going
+                }
+                list.push(block) // Add the block 
+            }
+        }
+    }
+    return(list) // Return the list of blocks
+}
+
 // Create the event listeners to run the plugin
 // Detect hopper absorbtion of items from locked entity. Refuse unless locked by main owner
 function initializeListeners() {
@@ -164,7 +199,7 @@ function initializeListeners() {
         return(authenticatePlayer(player, getLockPieces(block).signs)) // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
-        if (!block.name.includes("wall_sign") && !block.hasContainer()) { // Block can't be apart of a lock
+        if (config.get("PlayerGreifing") || (!block.name.includes("wall_sign") && !block.hasContainer())) { // Block can't be apart of a lock
             return // Quit the function
         }
         let lock = getLockPieces(block) // Store the lock chests/signs
@@ -197,22 +232,62 @@ function initializeListeners() {
         }, 500)
         return(has_access && !destroyed) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
+    mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for any explosion destruction
+        log("Exploded Block")
+        let blocks = getExplodedBlocks(pos, radius, maxResistance)
+        if (blocks.length > 0 && !config.get("TNTGreifing")) { // Blew up a lock chest, and TNT Greifing is off
+            setTimeout(() => { // Replace the locks after explosion is done
+                for (let block of blocks) { // Go through each block
+                    let lock = getLockPieces(block) // Store the lock components
+                    for (let chest of lock.chests) { // Go through each chest
+                        try {
+                            let entity = chest.getBlockEntity().getNbt() // Store the chest NBT
+                            chest.getBlockEntity().setNbt(entity) // Update the chest NBT
+                        }
+                        catch (e) {}
+                    }
+                    for (let sign of lock.signs) { // Go through each sign
+                        try {
+                            let entity = sign.getBlockEntity().getNbt() // Store the sign NBT
+                            sign.getBlockEntity().setNbt(entity)
+                        }
+                        catch (e) {}
+                    }
+                }
+            }, 500)
+        }
+    })
+    mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
+        let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
+        if (config.get("AllowHopperStealing") || (!above.name.includes("wall_sign") && !above.hasContainer())) { // Can't be apart of a lock
+            return // Quit the function
+        }
+        let access_list = getAccessList(getLockPieces(above)) // Get the list of players with access to the lock above the minecart (if exists)
+        if (access_list.length == 0) { // No players listed on the lock (if exists at all) 
+            return // Quit the function
+        }
+        else if (isMinecart) { // Block above is locked, and trying to drain into Minecart
+            return(false) // Can't lock a minecart
+        }
+        let hopper_access = getAccessList(getLockPieces(mc.getBlock(pos))) // Get the list of players with access to the hopper (if exists)
+        return(("" + access_list) == ("" + hopper_access)) // Return whether or not the hopper should absorb items from the locked chest
+    })
 }
 
 // Create the configuration files for the plugin
 // Should implement grief prevention
 function initializeConfigs() {
-    STORAGE = {
+    let STORAGE = {
     }
-    CONFIG = {
+    let CONFIG = {
         "WarnSelfLockout": true, // Warn users if they will lock themselves out of a chest
-        "AllowSelfLockout": true, // Allow users to lock themselves out of a chest
+        "AllowSelfLockout": true, // Allow players to lock themselves out of a chest
+        "AllowHopperStealing": false, // Allow players to steal from locked chests using hoppers
         "WarnAccessDenial": true, // Tell the user if they don't have access
         "AdminGreifing": false, // Prevent admins from breaking locks
         "PlayerGreifing": false, // Prevent players from breaking locks
         "MobGreifing": false, // Prevent mobs from breaking locks
-        "TNTGreifing": false, // Prevent TNT from breaking locks
-        "FireGreifing": false, // Prevent fire from breaking blocks
+        "TNTGreifing": true, // Prevent TNT from breaking locks
     }
     storage = new JsonConfigFile("plugins/LLContainerLock/storage.json", JSON.stringify(STORAGE)) // Import the storage configuration
     config = new JsonConfigFile("plugins/LLContainerLock/config.json", JSON.stringify(CONFIG)) // Import the settings configuration
