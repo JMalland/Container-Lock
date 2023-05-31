@@ -23,7 +23,7 @@ function getLockPieces(block) {
         object.signs = [] // Empty list to store signs
         for (let i=2; i<=5; i++) { // Go through each cardinal direction
             let sign = mc.getBlock(compass[i](chest_one.pos)) // Store the potential sign block
-            sign.pos = compass[i](chest_one.pos) // Update the PosInt value of the block
+            //sign.pos = compass[i](chest_one.pos) // Update the PosInt value of the block
             if (compass[sign.getBlockState().facing_direction] == null) { // The sign isn't facing the proper direction (isn't apart of this lock)
                 sign = null // Erase the sign from the list
             }
@@ -40,12 +40,7 @@ function getLockPieces(block) {
             }
             else if (!object.signs[i].name.includes("wall_sign")) { // Block is not a sign, but should be
                 log(object.signs[i].name)
-                mc.setBlock(object.signs[i].pos, storage.get(object.signs[i].pos.toString()).sign) // Replace the block
-                object.signs[i] = mc.getBlock(object.signs[i].pos) // Update the block
-                let nbt = object.signs[i].getNbt() // Store the block NBT
-                nbt.getTag("states").setTag("facing_direction", new NbtInt(object.signs.length > 2 ? i + 2 : facing)) // Set the facing direction
-                object.signs[i].setNbt(nbt) // Update the block NBT
-                resetLockText(object.signs[i], true) // Replace the text on the sign
+                replaceSign(object.signs[i], object.signs.length > 2 ? i + 2 : facing)
                 log("Replaced Lock Sign!")
             }
         }
@@ -82,9 +77,36 @@ function getAccessList(lock) {
     return(access_list) // Return the array
 }
 
+function replaceSign(sign, facing) {
+    log(sign)
+    log(facing)
+    mc.setBlock(sign.pos, storage.get(sign.pos.toString()).sign) // Replace the block
+    sign = mc.getBlock(sign.pos) // Update the block
+    let nbt = sign.getNbt() // Store the block NBT
+    nbt.getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
+    sign.setNbt(nbt) // Update the block NBT
+    resetLockText(sign, true) // Replace the text on the sign
+}
+
+function replaceChests(chests) {
+    for (let chest of chests) { // Go through each chest
+        if (chest == null) { // Chest doesn't exist
+            continue // Keep going
+        }
+        try {
+            let entity = chest.getBlockEntity().getNbt() // Store chest NBT
+            let nbt = chest.getNbt() // Store chest NBT
+            mc.setBlock(chest.pos, chest.name) // Replace the block
+            mc.getBlock(chest.pos).getBlockEntity().setNbt(entity) // Update the chest NBT
+            mc.getBlock(chest.pos).setNbt(nbt) // Update the chest NBT
+        }
+        catch (e) {} // Do nothing with the caught exception
+    }
+}
+
 function resetLockText(block, force) {
     let expected = "[Lock]" // Initial line of the sign's text
-    if (storage.get(block.pos.toString()) == null) { // The block isn't a lock
+    if (storage.get(block.pos.toString()) == null || block.getBlockEntity() == null) { // The block isn't a lock, or has no text
         return // Quit the function
     }
     for (let line of storage.get(block.pos.toString()).list) { // Go through each player with access
@@ -183,7 +205,7 @@ function getExplodedBlocks(pos, radius, maxResist) {
                 if ((!block.name.includes("wall_sign") && !block.hasContainer()) || getAccessList(getLockPieces(block)).length == 0) { // The lock doesn't exist
                     continue // Keep going
                 }
-                list.push(block) // Add the block 
+                list.push(getLockPieces(block)) // Add the block 
             }
         }
     }
@@ -218,50 +240,27 @@ function initializeListeners() {
             }
         }
         setTimeout(() => { // Re-connect all chests in real time
-            lock = getLockPieces(block) // Update the lock pieces (in case changed in 500 ms)
-            for (let chest of lock.chests) { // Go through each chest
-                if (chest == null) { // Chest doesn't exist
-                    continue // Keep going
-                }
-                try {
-                    let entity = chest.getBlockEntity().getNbt() // Store chest NBT
-                    chest.getBlockEntity().setNbt(entity) // Update the chest NBT
-                }
-                catch (e) {} // Do nothing with the caught exception
-            }
+            replaceChests(lock.chests)
         }, 500)
         return(has_access && !destroyed) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
     mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for any explosion destruction
         log("Exploded Block")
         let blocks = getExplodedBlocks(pos, radius, maxResistance)
-        if (blocks.length > 0 && !config.get("TNTGreifing")) { // Blew up a lock chest, and TNT Greifing is off
-            setTimeout(() => { // Replace the locks after explosion is done
-                for (let block of blocks) { // Go through each block
-                    let lock = getLockPieces(block) // Store the lock components
-                    for (let chest of lock.chests) { // Go through each chest
-                        if (chest != null) { // Chest is not apart of the lock
-                            continue // Keep going
-                        }
-                        try {
-                            let entity = chest.getBlockEntity().getNbt() // Store the chest NBT
-                            chest.getBlockEntity().setNbt(entity) // Update the chest NBT
-                        }
-                        catch (e) {}
+        log("Locks Destroyed: " + blocks.length)
+        // Erase all lock-chest contents, and set blocks to air before replacing them, just so drops don't fall
+        setTimeout(() => {
+            // Replace blocks after delay
+            for (let lock of blocks) { // Go through each block
+                replaceChests(lock.chests) // Replace the chests
+                for (let sign of lock.signs) { // Go through signs
+                    if (sign == null) { // Not apart of lock
+                        continue // Keep going
                     }
-                    for (let sign of lock.signs) { // Go through each sign
-                        if (sign != null) { // Sign is not apart of the lock
-                            continue // Keep going
-                        }
-                        try {
-                            let entity = sign.getBlockEntity().getNbt() // Store the sign NBT
-                            sign.getBlockEntity().setNbt(entity)
-                        }
-                        catch (e) {}
-                    }
+                    replaceSign(sign, sign.getBlockState().facing_direction)
                 }
-            }, 500)
-        }
+            }
+        }, 500)
     })
     mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
         let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
