@@ -39,13 +39,7 @@ function getLockPieces(block) {
                 object.signs[i] = null // Erase the block from the list, since irrelevant
             }
             else if (!object.signs[i].name.includes("wall_sign")) { // Block is not a sign, but should be
-                log(object.signs[i].name)
-                mc.setBlock(object.signs[i].pos, storage.get(object.signs[i].pos.toString()).sign, 0) // Replace the block
-                let nbt = mc.getBlock(object.signs[i].pos).getNbt() // Store the NBT
-                nbt.getTag("states").setTag("facing_direction", new NbtInt(object.signs.length > 2 ? i + 2 : facing)) // Update the direction
-                mc.getBlock(object.signs[i].pos).setNbt(nbt) // Update the NBT
-                resetLockText(mc.getBlock(object.signs[i].pos), true) // Replace the text on the sign
-                log("Replaced Lock Sign!")
+                resetSign(object.signs[i], true) // Replace the text on the sign
             }
         }
     }
@@ -81,6 +75,7 @@ function getAccessList(lock) {
     return(access_list) // Return the array
 }
 
+// Place each block in the list in place of whatever's at that position, keeping the same NBT tags
 function resetBlocks(blocks) {
     for (let block of blocks) {
         if (block == null) { // Block doesn't exist 
@@ -97,18 +92,28 @@ function resetBlocks(blocks) {
     }
 }
 
-function resetLockText(block, force) {
+// Update the text of the sign at that position, replacing the sign again if necessary
+function resetSign(sign, force) {
     let expected = "[Lock]" // Initial line of the sign's text
-    if (storage.get(block.pos.toString()) == null || block.getBlockEntity() == null) { // The block isn't a lock, or has no text
+    if (storage.get(sign.pos.toString()) == null || sign.getBlockEntity() == null) { // The block isn't a lock, or has no text
         return // Quit the function
     }
-    for (let line of storage.get(block.pos.toString()).list) { // Go through each player with access
+    else if (!sign.name.includes("wall_sign")) { // Block isn't apart of a lock, but should be
+        mc.setBlock(sign.pos, storage.get(sign.pos.toString()).sign, 0) // Replace the block
+        let nbt = mc.getBlock(sign.pos).getNbt() // Store the NBT
+        nbt.getTag("states").setTag("facing_direction", new NbtInt(object.signs.length > 2 ? i + 2 : facing)) // Update the direction
+        mc.getBlock(sign.pos).setNbt(nbt) // Update the NBT
+        let sign = mc.getBlock(sign.pos) // Update the sign block
+        force = true // Make sure the text gets updated      
+        log("Replaced lock sign!")
+    }
+    for (let line of storage.get(sign.pos.toString()).list) { // Go through each player with access
         expected += "\n" + line // Add each line
     }
-    let entity = block.getBlockEntity().getNbt() // Store the entity NBT
+    let entity = sign.getBlockEntity().getNbt() // Store the entity NBT
     if (force || entity.getTag("FrontText").getTag("Text").toString() != expected) { // Sign doesn't have the proper text
         entity.getTag("FrontText").setTag("Text", new NbtString(expected)) // Update the sign's text
-        block.getBlockEntity().setNbt(entity) // Update the NBT to display the right text (re-runs this function)
+        sign.getBlockEntity().setNbt(entity) // Update the NBT to display the right text (re-runs this function)
         log("Updated sign text!")
     }
 }
@@ -124,36 +129,13 @@ function placedOnContainer(block) {
     return(target_block.hasContainer() && facing == (compass[target_facing] == null ? facing : target_facing)) // Return whether or not the sign is placed on a container
 }
 
-// Return whether or not a player should have access to a container, based on the lock-signs
-function authenticatePlayer(player, lock) {
-    let access_list = getAccessList(lock) // Store the list of players with access
-    let authenticated = access_list.includes(player.name) // Authenticate the player's access to the lock
-    let unlocked = access_list.length == 0 // Whether or not the container isn't locked
-    /*for (let sign of signs) { // Go through each sign
-        if (sign == null) { // Sign not apart of lock
-            continue // Keep going
-        }
-        let access = storage.get(sign.pos.toString()) // Store the lock access list
-        if (!access.list.includes(player.name) && !(config.get("AdminGreifing") && player.isOP())) { // Player doesn't have access to the chest
-            authenticated = authenticated || false // Whether or not the player has access to a lock
-        }
-        else {
-            authenticated = true // The player has access, for certain
-        }
-        unlocked = unlocked && access == null // Whether or not there's a lock on the container
-    }*/
-    log("Authenticated: " + authenticated)
-    log("Unlocked: " + unlocked)
-    return(authenticated || unlocked) // Return the player's access
-}
-
 // Create the lock after text is written by the player or the initial placement event
 function blockChanged(before, after) {
     if (!after.name.includes("wall_sign")) { // Sign not being placed
         return // Quit the function
     }
     else if (storage.get(after.pos.toString()) != null) { // The sign is already apart of a lock
-        resetLockText(after, false) // Reset the text if was changed
+        resetSign(after, false) // Reset the text if was changed
         return
     }
     let access = after.getBlockEntity().getNbt().getTag("FrontText").getTag("Text").toString().split("\n") // List of all players with access to the locked block (must be a container)
@@ -178,10 +160,10 @@ function afterPlace(player, block) {
         return // Quit the function
     }
     let lock = getLockPieces(block) // Store the lock chests/signs if a lock exists
-    if (!authenticatePlayer(player, lock)) { // A lock exists and the player doesn't have access
+    let access_list = getAccessList(lock) // Store the list of players with access
+    if (!(access_list.includes(player.name) || access_list.length == 0)) { // A lock exists and the player doesn't have access
         log("Lock already exists! You're trying to bypass it!")
-        block.destroy(true) // Break the sign
-        return(false) // Quit the function
+        return // Quit the function
     }
     let entity = block.getBlockEntity().getNbt() // Store the entity NBT
     entity.setString("Text", "") // Set the text of the sign, just to trigger the 'blockChanged' function
@@ -222,31 +204,32 @@ function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
     mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
-        return(authenticatePlayer(player, getLockPieces(block))) // Allow the player access to the container if not 'locked'
+        let access_list = getAccessList(getLockPieces(block)) // Store the players with access to the lock (if lock exists)
+        return(access_list.includes(player.name) || access_list.length == 0) // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         if (config.get("PlayerGreifing") || (!block.name.includes("wall_sign") && !block.hasContainer())) { // Block can't be apart of a lock
             return // Quit the function
         }
         let lock = getLockPieces(block) // Store the lock chests/signs
-        let has_access = authenticatePlayer(player, lock) // Determine if the player has access
-        let destroyed = false // Whether or not the lock has been broken
+        let access_list = getAccessList(lock) // Store the players with access to the lock
+        let authenticated = access_list.includes(player.name) // Determine if the player has access
+        let unlocked = access_list.length == 0 // Whether or not the lock is unlocked
         for (let sign of lock.signs) { // Go through each sign (once more)
-            if (sign != null && has_access) { // The lock exists and the player has access
-                storage.delete(sign.pos.toString()) // Remove the lock from storage
-                sign.destroy(true) // Destroy the sign
-                destroyed = true // Update the destruction
-                log("Removed Lock.")
+            if (sign == null || !authenticated) { // Not apart of the lock, or player doesn't have access
+                continue // Keep going
             }
-            else if (sign != null) { // The lock exists, but player doesn't have access
-                log("Reset Lock Text.")
-                resetLockText(sign, true) // Reset the sign's text
-            }
+            storage.delete(sign.pos.toString()) // Remove the lock from storage
+            sign.destroy(true) // Destroy the sign
+            log("Removed Lock.")
         }
-        setTimeout(() => { // Re-connect all chests in real time
-            resetBlocks(lock.chests)
-        }, 500)
-        return(has_access && !destroyed) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
+        if (!authenticated && !unlocked) { // The lock wasn't destroyed
+            setTimeout(() => { // Re-connect all chests in real time
+                resetBlocks(lock.chests) // Replace all the chests
+                resetBlocks(lock.signs) // Replace all the signs
+            }, 500)
+        }
+        return(authenticated || unlocked) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
     mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for any explosion destruction
         log("Exploded Block")
