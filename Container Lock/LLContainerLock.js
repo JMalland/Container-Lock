@@ -97,32 +97,6 @@ function resetBlocks(blocks) {
     }
 }
 
-function replaceSign(sign, facing) {
-    log(sign)
-    log(facing)
-    mc.setBlock(sign.pos, storage.get(sign.pos.toString()).sign) // Replace the block
-    sign = mc.getBlock(sign.pos) // Update the block
-    let nbt = sign.getNbt() // Store the block NBT
-    nbt.getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
-    sign.setNbt(nbt) // Update the block NBT
-}
-
-function replaceChests(chests) {
-    for (let chest of chests) { // Go through each chest
-        if (chest == null) { // Chest doesn't exist
-            continue // Keep going
-        }
-        try {
-            let entity = chest.getBlockEntity().getNbt() // Store chest NBT
-            let nbt = chest.getNbt() // Store chest NBT
-            mc.setBlock(chest.pos, chest.name) // Replace the block
-            mc.getBlock(chest.pos).getBlockEntity().setNbt(entity) // Update the chest NBT
-            mc.getBlock(chest.pos).setNbt(nbt) // Update the chest NBT
-        }
-        catch (e) {} // Do nothing with the caught exception
-    }
-}
-
 function resetLockText(block, force) {
     let expected = "[Lock]" // Initial line of the sign's text
     if (storage.get(block.pos.toString()) == null || block.getBlockEntity() == null) { // The block isn't a lock, or has no text
@@ -270,7 +244,7 @@ function initializeListeners() {
             }
         }
         setTimeout(() => { // Re-connect all chests in real time
-            replaceChests(lock.chests)
+            resetBlocks(lock.chests)
         }, 500)
         return(has_access && !destroyed) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
