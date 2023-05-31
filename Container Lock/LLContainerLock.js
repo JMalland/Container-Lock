@@ -40,7 +40,11 @@ function getLockPieces(block) {
             }
             else if (!object.signs[i].name.includes("wall_sign")) { // Block is not a sign, but should be
                 log(object.signs[i].name)
-                replaceSign(object.signs[i], object.signs.length > 2 ? i + 2 : facing)
+                mc.setBlock(object.signs[i].pos, storage.get(object.signs[i].pos.toString()).sign, 0) // Replace the block
+                let nbt = mc.getBlock(object.signs[i].pos).getNbt() // Store the NBT
+                nbt.getTag("states").setTag("facing_direction", new NbtInt(object.signs.length > 2 ? i + 2 : facing)) // Update the direction
+                mc.getBlock(object.signs[i].pos).setNbt(nbt) // Update the NBT
+                resetLockText(mc.getBlock(object.signs[i].pos), true) // Replace the text on the sign
                 log("Replaced Lock Sign!")
             }
         }
@@ -77,6 +81,22 @@ function getAccessList(lock) {
     return(access_list) // Return the array
 }
 
+function resetBlocks(blocks) {
+    for (let block of blocks) {
+        if (block == null) { // Block doesn't exist 
+            continue // Keep going
+        }
+        log("Resetting " + mc.getBlock(block.pos).name + " with " + block.name)
+        log("New Direction: " + block.getBlockState().facing_direction)
+        mc.setBlock(block.pos, block.name, 0) // Replace whatever's at the position with the proper block
+        let new_block = mc.getBlock(block.pos) // Update the block
+        new_block.setNbt(block.getNbt()) // Update the block NBT ( ? and the facing_direction ? )
+        if (block.hasBlockEntity() && new_block.hasBlockEntity()) { // Can update the block entity
+            new_block.getBlockEntity().setNbt(block.getBlockEntity().getNbt()) // Update the block entity NBT
+        }
+    }
+}
+
 function replaceSign(sign, facing) {
     log(sign)
     log(facing)
@@ -85,7 +105,6 @@ function replaceSign(sign, facing) {
     let nbt = sign.getNbt() // Store the block NBT
     nbt.getTag("states").setTag("facing_direction", new NbtInt(facing)) // Set the facing direction
     sign.setNbt(nbt) // Update the block NBT
-    resetLockText(sign, true) // Replace the text on the sign
 }
 
 function replaceChests(chests) {
@@ -132,10 +151,11 @@ function placedOnContainer(block) {
 }
 
 // Return whether or not a player should have access to a container, based on the lock-signs
-function authenticatePlayer(player, signs) {
-    let authenticated = false // Authenticate the player's access to the lock
-    let unlocked = true // Whether or not the container isn't locked
-    for (let sign of signs) { // Go through each sign
+function authenticatePlayer(player, lock) {
+    let access_list = getAccessList(lock) // Store the list of players with access
+    let authenticated = access_list.includes(player.name) // Authenticate the player's access to the lock
+    let unlocked = access_list.length == 0 // Whether or not the container isn't locked
+    /*for (let sign of signs) { // Go through each sign
         if (sign == null) { // Sign not apart of lock
             continue // Keep going
         }
@@ -147,7 +167,7 @@ function authenticatePlayer(player, signs) {
             authenticated = true // The player has access, for certain
         }
         unlocked = unlocked && access == null // Whether or not there's a lock on the container
-    }
+    }*/
     log("Authenticated: " + authenticated)
     log("Unlocked: " + unlocked)
     return(authenticated || unlocked) // Return the player's access
@@ -184,7 +204,7 @@ function afterPlace(player, block) {
         return // Quit the function
     }
     let lock = getLockPieces(block) // Store the lock chests/signs if a lock exists
-    if (!authenticatePlayer(player, lock.signs)) { // A lock exists and the player doesn't have access
+    if (!authenticatePlayer(player, lock)) { // A lock exists and the player doesn't have access
         log("Lock already exists! You're trying to bypass it!")
         block.destroy(true) // Break the sign
         return(false) // Quit the function
@@ -202,10 +222,20 @@ function getExplodedBlocks(pos, radius, maxResist) {
         for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
             for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
                 let block = mc.getBlock(pos.x + x, pos.y + y, pos.z + z, pos.dimid) // Add each block
-                if ((!block.name.includes("wall_sign") && !block.hasContainer()) || getAccessList(getLockPieces(block)).length == 0) { // The lock doesn't exist
+                if (!block.name.includes("wall_sign") && !block.hasContainer()) { // The block isn't apart of a lock
                     continue // Keep going
                 }
-                list.push(getLockPieces(block)) // Add the block 
+                let lock = getLockPieces(block) // Store the lock components
+                if (getAccessList(lock).length == 0) { // The lock has nobody with access
+                    continue // Keep going
+                }
+                list.push(lock) // Add the block
+                for (let item of [...lock.chests, ...lock.signs]) { // Go through each component
+                    if (item == null) { // Not apart of lock
+                        continue // Keep going
+                    }
+                    mc.setBlock(item.pos, "minecraft:air", 0) // Replace the lock component with air
+                }
             }
         }
     }
@@ -218,14 +248,14 @@ function initializeListeners() {
     mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
     mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
     mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
-        return(authenticatePlayer(player, getLockPieces(block).signs)) // Allow the player access to the container if not 'locked'
+        return(authenticatePlayer(player, getLockPieces(block))) // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
         if (config.get("PlayerGreifing") || (!block.name.includes("wall_sign") && !block.hasContainer())) { // Block can't be apart of a lock
             return // Quit the function
         }
         let lock = getLockPieces(block) // Store the lock chests/signs
-        let has_access = authenticatePlayer(player, lock.signs) // Determine if the player has access
+        let has_access = authenticatePlayer(player, lock) // Determine if the player has access
         let destroyed = false // Whether or not the lock has been broken
         for (let sign of lock.signs) { // Go through each sign (once more)
             if (sign != null && has_access) { // The lock exists and the player has access
@@ -252,13 +282,22 @@ function initializeListeners() {
         setTimeout(() => {
             // Replace blocks after delay
             for (let lock of blocks) { // Go through each block
-                replaceChests(lock.chests) // Replace the chests
-                for (let sign of lock.signs) { // Go through signs
+                /*for (let chest of lock.chests) { // Go through each chest
+                    if (chest == null) { // Not apart of lock
+                        continue // Keep going
+                    }
+                    let entity = chest.getBlockEntity() // Store the block entity (in case it's null)
+                    replaceBlock(chest, chest.getBlockState().facing_direction, chest.getNbt(), entity == null ? entity : entity.getNbt()) // Replace the block
+                }*/
+                resetBlocks(lock.chests) // Replace each chest
+                resetBlocks(lock.signs) // Replace each sign
+                /*for (let sign of lock.signs) { // Go through signs
                     if (sign == null) { // Not apart of lock
                         continue // Keep going
                     }
-                    replaceSign(sign, sign.getBlockState().facing_direction)
-                }
+                    let entity = sign.getBlockEntity() // Store the block entity (in case it's null)
+                    replaceBlock(sign, sign.getBlockState().facing_direction, sign.getNbt(), entity == null ? entity : entity.getNbt())
+                }*/
             }
         }, 500)
     })
