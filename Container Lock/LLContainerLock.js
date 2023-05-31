@@ -239,22 +239,8 @@ function initializeListeners() {
         setTimeout(() => {
             // Replace blocks after delay
             for (let lock of blocks) { // Go through each block
-                /*for (let chest of lock.chests) { // Go through each chest
-                    if (chest == null) { // Not apart of lock
-                        continue // Keep going
-                    }
-                    let entity = chest.getBlockEntity() // Store the block entity (in case it's null)
-                    replaceBlock(chest, chest.getBlockState().facing_direction, chest.getNbt(), entity == null ? entity : entity.getNbt()) // Replace the block
-                }*/
                 resetBlocks(lock.chests) // Replace each chest
                 resetBlocks(lock.signs) // Replace each sign
-                /*for (let sign of lock.signs) { // Go through signs
-                    if (sign == null) { // Not apart of lock
-                        continue // Keep going
-                    }
-                    let entity = sign.getBlockEntity() // Store the block entity (in case it's null)
-                    replaceBlock(sign, sign.getBlockState().facing_direction, sign.getNbt(), entity == null ? entity : entity.getNbt())
-                }*/
             }
         }, 500)
     })
