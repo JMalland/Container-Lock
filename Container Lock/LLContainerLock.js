@@ -166,7 +166,8 @@ function initializeListeners() {
         return(access_list.includes(player.name) || access_list.length == 0) // Allow the player access to the container if not 'locked'
     })
     mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
-        if (config.get("PlayerGreifing") || (!block.name.includes("wall_sign") && !block.hasContainer())) { // Block can't be apart of a lock
+        if (!block.name.includes("wall_sign") && !block.hasContainer()) { // Block can't be apart of a lock
+            log("Ignored Destruction")
             return // Quit the function
         }
         let lock = getLockPieces(block) // Store the lock chests/signs
@@ -174,7 +175,8 @@ function initializeListeners() {
         let authenticated = access_list.includes(player.name) // Determine if the player has access
         let unlocked = access_list.length == 0 // Whether or not the lock is unlocked
         for (let sign of lock.signs) { // Go through each sign (once more)
-            if (sign == null || !authenticated) { // Not apart of the lock, or player doesn't have access
+            if (!(config.get("PlayerGreifing") || (config.get("AdminGreifing") && player.isOP())) && (sign == null || !authenticated)) { // Not apart of the lock, or player doesn't have access
+                log("Skipped Sign")
                 continue // Keep going
             }
             storage.delete(sign.pos.toString()) // Remove the lock from storage
@@ -183,11 +185,14 @@ function initializeListeners() {
         }
         if (!authenticated && !unlocked) { // The lock wasn't destroyed
             setTimeout(() => { // Re-connect all chests in real time
+                log("Reset Blocks")
                 resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
             }, 500)
         }
+        log("Destroyed Block: " + (authenticated || unlocked))
         return(authenticated || unlocked) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
+    // Explosion takes 2 attempts to break the lock. --> Destroys the onDestroyBlock listener
     mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for explosion destruction
         let list = new Set() // List of all destroyed locks
         for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
@@ -215,18 +220,19 @@ function initializeListeners() {
         setTimeout(() => { // Refresh all of the blocks
             for (let lock of list) { // Go through each block
                 resetBlocks(lock.chests) // Replace all the chests (so locked containers not destroyed immediately)
-                if ((config.get("TNTGreifing") && source.toString().includes("TNT")) || (config.get("MobGreifing") && !source.toString().includes("TNT"))) { // TNT and/or Mob Greifing is enabled
+                if ((config.get("TNTGreifing") && source.toString().includes("TNT")) || (config.get("MobGreifing") && !source.toString().includes("TNT"))) { // TNT and Mob Greifing are enabled
                     for (let sign of lock.signs) { // Go through each sign
-                        if (sign == null) { // Not apart of the lock
+                        if (sign == null || storage.get(sign.pos.toString()) == null) { // Not apart of the lock
                             continue // Keep going    
                         }
                         storage.delete(sign.pos.toString()) // Remove the lock from storage
                         sign.destroy(true) // Destroy the sign
                         log("Removed Lock.")
                     }
-                    continue // Keep going
                 }
-                resetBlocks(lock.signs) // Replace all the signs
+                else { // TNT and Mob Greifing are disabled
+                    resetBlocks(lock.signs) // Replace all the signs
+                }
             }
         }, 500)
     })
