@@ -226,7 +226,7 @@ function initializeListeners() {
                             continue // Keep going    
                         }
                         storage.delete(sign.pos.toString()) // Remove the lock from storage
-                        sign.destroy(true) // Destroy the sign
+                        sign.destroy(true) // Destroy the sign --> Causes Infinite Loop ????????
                         log("Removed Lock.")
                     }
                 }
