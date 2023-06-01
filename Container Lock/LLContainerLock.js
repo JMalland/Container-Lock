@@ -34,7 +34,7 @@ function getLockPieces(block) {
     }
     for (let i=0; i<object.signs.length; i++) { // Go through each sign
         if (object.signs[i] != null) { // Block exists --> Signs end up null if not lock, or sign
-            if (storage.get(object.signs[i].pos.toString()) == null) { // Block isn't apart of a lock
+            if (storage.get(object.signs[i].pos.toString()) == null || (object.signs.length == 2 && object.signs[i].getBlockState().facing_direction != facing)) { // Block isn't apart of a lock, or this lock
                 object.signs[i] = null // Erase the block from the list, since irrelevant
             }
             else if (!object.signs[i].name.includes("wall_sign")) { // Block is not a sign, but should be
