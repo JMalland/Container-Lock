@@ -72,7 +72,7 @@ function resetAndBreakLock(chests, signs, delay, condition) {
             }
             storage.delete(sign.pos.toString()) // Remove the lock from storage
             storage.reload() // Reload the configuration after it's edited
-            sign.destroy(false) // Destroy the sign
+            mc.setBlock(sign.pos, "minecraft:air") // Break the lock without triggering onBlockDestroy
             mc.spawnItem(mc.newItem(sign.name.substring(0, sign.name.indexOf("wall_sign")) + "sign", 1), sign.pos) // Summon a dropped sign
         }
     }
@@ -152,7 +152,7 @@ function blockChanged(before, after) {
         return // Quit the function
     }
     else if (!placedOnContainer(after) || access.length == 1) { // The lock-sign isn't placed on a container, or on it's front, or there's no players with access
-        after.destroy(false) // Break the sign
+        mc.setBlock(after.pos, "minecraft:air") // Break the lock without triggering onBlockDestroy
         mc.spawnItem(mc.newItem(after.name.substring(0, after.name.indexOf("wall_sign")) + "sign", 1), after.pos) // Summon a dropped sign
         return(false) // Quit the function
     }
@@ -178,7 +178,7 @@ function afterPlace(player, block) {
             resetSign(block) // Reset the sign
         }
         else { // Block isn't apart of a lock
-            block.destroy(false) // Break the sign
+            mc.setBlock(block.pos, "minecraft:air") // Break the lock without triggering onBlockDestroy
         }
         return // Quit the function (without interrupting in case lock-sign gets replaced)
     }
@@ -191,6 +191,7 @@ function afterPlace(player, block) {
 // Need to detect lock sign addition to locked containers without access (allow non-lock signs)
 // Need to prevent hopper outputting to locked containers without access
 // Need to store users in permissions.json and do Username based off of xuid
+// Destroying a lock via explosion ends up breaking onDestroyBlock
 
 // Create the event listeners to run the plugin
 mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
