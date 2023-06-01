@@ -231,7 +231,7 @@ function initializeListeners() {
             return // Quit the function
         }
         let access_list = getAccessList(getLockPieces(above)) // Get the list of players with access to the lock above the minecart (if exists)
-        if (access_list.length == 0) { // No players listed on the lock (if exists at all) 
+        if (access_list.size == 0) { // No players listed on the lock (if exists at all) 
             return // Quit the function
         }
         else if (isMinecart) { // Block above is locked, and trying to drain into Minecart
