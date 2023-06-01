@@ -124,8 +124,7 @@ function placedOnContainer(block) {
     if (facing == null || facing < 2 || facing > 5) { // Facing value is invalid
         return(false) // Return false, since something is wrong
     }
-    let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the block the sign was placed on
-    let target_facing = target_block.getBlockState().facing_direction // Store the direction the container is facing
+    let target_facing = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)).getBlockState().facing_direction // Store the direction the container is facing
     return(target_block.hasContainer() && facing == (compass[target_facing] == null ? facing : target_facing)) // Return whether or not the sign is placed on a container
 }
 
