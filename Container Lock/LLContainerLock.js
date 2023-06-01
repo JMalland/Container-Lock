@@ -218,7 +218,6 @@ mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign des
     }
     return(false) // Don't break the block because the lock was destroyed
 })
-// Explosion takes 2 attempts to break the lock. --> Destroys the onDestroyBlock listener
 mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for explosion destruction
     let list = new Set() // List of all destroyed locks
     for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
