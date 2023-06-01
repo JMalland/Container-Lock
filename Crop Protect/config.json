@@ -1,7 +1,0 @@
-{
-    "debug": true,
-    "farmland": {
-        "alwaysFertile": false,
-        "noFallDamage": false,
-    }
-}
