@@ -193,6 +193,9 @@ mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign des
         log("Ignored Destruction")
         return // Quit the function
     }
+    else if (block.name.includes("wall_sign") && storage.get(block.pos.toString()) == null) { // Sign isn't apart of a lock
+        return // Quit the function
+    }
     let lock = getLockPieces(block) // Store the lock chests/signs
     let access_list = getAccessList(lock) // Store the players with access to the lock
     let authenticated = access_list.includes(player.name) // Determine if the player has access
