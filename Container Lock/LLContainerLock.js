@@ -17,8 +17,9 @@ compass = { // Calculate the position in a given direction
 function getLockPieces(block) {
     let facing = block.getBlockState().facing_direction
     let chest_one = block.hasContainer() ? block : mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Get the first locked chest
+    let chest_entity = chest_one.getBlockEntity().getNbt() // Store the entity NBT tag of the first chest
     let object = {} // Store the values in an object. Easier than using '.length%i'
-    object.chests = [chest_one, getSecondChest(chest_one)] // Store the chests in an array
+    object.chests = [chest_one, chest_entity.getTag("pairx") == null ? null : mc.getBlock(parseInt(chest_entity.getTag("pairx")), chest_one.pos.y, parseInt(chest_entity.getTag("pairz")), chest_one.pos.dimid)] // Store the chests in an array
     if (object.chests[1] == null && compass[chest_one.getBlockState().facing_direction] == null) { // No large chest, and container has no 'facing' direction
         object.signs = [] // Empty list to store signs
         for (let i=2; i<=5; i++) { // Go through each cardinal direction
@@ -46,20 +47,6 @@ function getLockPieces(block) {
     return(object) // Return an object containing signs/chests
 }
 
-// Return the chest connected to another chest
-function getSecondChest(block) {
-    if (block == null || !block.hasContainer()) { // Block doesn't exist, or isn't a container
-        return(null) // Return nothing, since not a chest
-    }
-    let entity = block.getBlockEntity().getNbt() // Store the entity NBT
-    let pairx = entity.getTag("pairx") // Store the paired x coordinate
-    let pairz = entity.getTag("pairz") // Store the paired z coordinate
-    if (pairx != null && pairz != null) { // There's a paired chest
-        return(mc.getBlock(parseInt(pairx), block.pos.y, parseInt(pairz), block.pos.dimid)) // Return the paired chest
-    }
-    return(null) // Return nothing, since not a chest
-}
-
 // Return the list of players with access
 function getAccessList(lock) {
     let access_list = [] // Store who has access to the lock
@@ -81,8 +68,6 @@ function resetBlocks(blocks) {
         if (block == null) { // Block doesn't exist 
             continue // Keep going
         }
-        log("Resetting " + mc.getBlock(block.pos).name + " with " + block.name)
-        log("New Direction: " + block.getBlockState().facing_direction)
         mc.setBlock(block.pos, block.name, 0) // Replace whatever's at the position with the proper block
         let new_block = mc.getBlock(block.pos) // Update the block
         new_block.setNbt(block.getNbt()) // Update the block NBT ( ? and the facing_direction ? )
@@ -90,6 +75,7 @@ function resetBlocks(blocks) {
             new_block.getBlockEntity().setNbt(block.getBlockEntity().getNbt()) // Update the block entity NBT
         }
     }
+    log("Reset " + blocks.length + " blocks.")
 }
 
 // Update the text of the sign at that position, replacing the sign again if necessary
