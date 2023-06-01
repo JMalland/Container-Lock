@@ -178,7 +178,7 @@ function somethingExploded(pos, radius, mm_delay) {
             }
         }
     }
-    log("Explosion destroyed " + list.length + " locks!")
+    log("Explosion destroyed " + list.size + " locks!")
     setTimeout(() => { // Refresh all of the blocks
         for (let lock of list) { // Go through each block
             resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
