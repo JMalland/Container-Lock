@@ -1,4 +1,4 @@
-ll.registerPlugin("Container Lock", "Allow for players to lock chests and other containers using signs.", [2,3,3], {"Author": "JTM"})
+ll.registerPlugin("Container Lock", "Allow for players to lock chests and other containers using signs.", [2,3,5], {"Author": "JTM"})
 
 var storage = {}
 var config = {}
@@ -156,7 +156,7 @@ function afterPlace(player, block) {
 }
 
 function getExplodedBlocks(pos, radius) {
-    let list = [] // List of all destroyed locks
+    let list = new Set() // List of all destroyed locks
     for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
         for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
             for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
@@ -168,7 +168,7 @@ function getExplodedBlocks(pos, radius) {
                 if (getAccessList(lock).length == 0) { // The lock has nobody with access
                     continue // Keep going
                 }
-                list.push(lock) // Add the block
+                list.add(lock) // Add the block
                 for (let item of [...lock.chests, ...lock.signs]) { // Go through each component
                     if (item == null) { // Not apart of lock
                         continue // Keep going
