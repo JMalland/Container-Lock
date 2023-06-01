@@ -132,7 +132,7 @@ function blockChanged(before, after) {
     if (!after.name.includes("wall_sign")) { // Sign not being placed
         return // Quit the function
     }
-    else if (getAccessList(getLockPieces(after)).length ) { // The sign is already apart of a lock
+    else if (storage.get(after.pos.toString()) != null) { // The sign is already apart of a lock
         resetSign(after, false) // Reset the text if was changed
         return
     }
