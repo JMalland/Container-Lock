@@ -60,16 +60,27 @@ function getAccessList(lock) {
     return(access_list) // Return the array
 }
 
-function breakLock(signs) { 
-    for (let sign of signs) { // Go through each sign
-        if (sign == null || storage.get(sign.pos.toString()) == null) { // Not apart of the lock
-            continue // Keep going
+function resetAndBreakLock(chests, signs, delay, condition) {
+    setTimeout(() => { // Reset all the locked chests
+        resetBlocks(chests) // Replace all the chests
+    }, delay)
+    if (condition) { // The condition is met to break the locks
+        log("Destroyed Lock!")
+        for (let sign of signs) { // Go through each sign
+            if (sign == null || storage.get(sign.pos.toString()) == null) { // Not apart of the lock
+                continue // Keep going
+            }
+            storage.delete(sign.pos.toString()) // Remove the lock from storage
+            storage.reload() // Reload the configuration after it's edited
+            sign.destroy(false) // Destroy the sign
+            mc.spawnItem(mc.newItem(sign.name.substring(0, sign.name.indexOf("wall_sign")) + "sign", 1), sign.pos) // Summon a dropped sign
         }
-        storage.delete(sign.pos.toString()) // Remove the lock from storage
-        storage.reload() // Reload the configuration after it's edited
-        sign.destroy(false) // Destroy the sign
-        mc.spawnItem(mc.newItem(sign.name.substring(0, sign.name.indexOf("wall_sign")) + "sign", 1), sign.pos) // Summon a dropped sign
-        log("Removed Lock!")
+    }
+    else {
+        setTimeout(() => { // Reset all the lock-signs
+            log("Protected Lock!")
+            resetBlocks(signs) // Replace all the signs
+        }, delay)
     }
 }
 
@@ -203,19 +214,7 @@ mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign des
         log("Unlocked container!")
         return // Quit the function
     }
-    setTimeout(() => { // Re-connect all the chests
-        resetBlocks(lock.chests) // Replace all the chests
-    }, 500)
-    if (authenticated || config.get("PlayerGreifing") || (config.get("AdminGreifing") && player.isOP())) { // Player is authenticated, or greifing is enabled
-        log("Destroyed lock!")
-        breakLock(lock.signs) // Destroy the lock-signs on the lock
-    }
-    else { // The Player isn't authenticated, and no greifing is enabled
-        log("Protected lock!")
-        setTimeout(() => { // Re-connect all signs
-            resetBlocks(lock.signs) // Replace all the signs
-        }, 500)
-    }
+    resetAndBreakLock(lock.chests, lock.signs, 500, (authenticated || config.get("PlayerGreifing") || (config.get("AdminGreifing") && player.isOP()))) // Reset the lock components and/or break them if meets the condition
     return(false) // Don't break the block because the lock was destroyed
 })
 mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for explosion destruction
@@ -243,24 +242,8 @@ mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) =
             }
         }
     }
-    setTimeout(() => { // Re-connect all the chests
-        for (let lock of list) { // Go through each lock
-            resetBlocks(lock.chests) // Replace all the chests
-        }
-    }, 500)
-    if ((config.get("TNTGreifing") && source.name.includes("TNT")) || (config.get("MobGreifing") && !source.name.includes("TNT"))) { // TNT and Mob Greifing are enabled
-        log("Explosion destroyed " + list.size + " locks!")
-        for (let lock of list) { // Go through each lock
-            breakLock(lock.signs) // Destroy the lock-signs on the lock
-        }
-    }
-    else { // TNT and Mob Greifing are disabled
-        log("Prevented explosion of " + list.size + " locks!")
-        setTimeout(() => { // Re-connect all the signs
-            for (let lock of list) { // Go through each lock
-                resetBlocks(lock.signs) // Replace all the signs
-            }
-        }, 500)
+    for (let lock of list) { // Go through each lock caught in the explosion
+        resetAndBreakLock(lock.chests, lock.signs, 500, ((config.get("TNTGreifing") && source.name.includes("TNT")) || (config.get("MobGreifing") && !source.name.includes("TNT")))) // Reset the lock components and/or break them if meets the condition
     }
 })
 mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item being absorbed
