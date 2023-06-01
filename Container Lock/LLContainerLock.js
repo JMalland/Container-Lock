@@ -215,7 +215,7 @@ function initializeListeners() {
         setTimeout(() => { // Refresh all of the blocks
             for (let lock of list) { // Go through each block
                 resetBlocks(lock.chests) // Replace all the chests (so locked containers not destroyed immediately)
-                if ((config.get("TNTGreifing") && source.includes("TNT")) || (config.get("MobGreifing") && !source.includes("TNT"))) { // TNT and/or Mob Greifing is enabled
+                if ((config.get("TNTGreifing") && source.toString().includes("TNT")) || (config.get("MobGreifing") && !source.toString().includes("TNT"))) { // TNT and/or Mob Greifing is enabled
                     for (let sign of lock.signs) { // Go through each sign
                         if (sign == null) { // Not apart of the lock
                             continue // Keep going    
