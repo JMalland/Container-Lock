@@ -1,10 +1,10 @@
 {
     "WarnSelfLockout": true,
     "AllowSelfLockout": true,
+    "AllowHopperStealing": false,
     "WarnAccessDenial": true,
     "AdminGreifing": false,
     "PlayerGreifing": false,
     "MobGreifing": false,
-    "TNTGreifing": false,
-    "FireGreifing": false
+    "TNTGreifing": false
 }

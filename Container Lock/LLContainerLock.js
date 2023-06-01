@@ -281,7 +281,6 @@ mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hoppe
 })
 
 // Create the configuration files for the plugin
-// Should implement grief prevention
 function initializeConfigs() {
     let STORAGE = {
     }
