@@ -249,7 +249,7 @@ mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) =
             resetBlocks(lock.chests) // Replace all the chests
         }
     }, 500)
-    if ((config.get("TNTGreifing") && source.toString().includes("TNT")) || (config.get("MobGreifing") && !source.toString().includes("TNT"))) { // TNT and Mob Greifing are enabled
+    if ((config.get("TNTGreifing") && source.name.includes("TNT")) || (config.get("MobGreifing") && !source.name.includes("TNT"))) { // TNT and Mob Greifing are enabled
         log("Explosion destroyed " + list.size + " locks!")
         for (let lock of list) { // Go through each lock
             breakLock(lock.signs) // Destroy the lock-signs on the lock
