@@ -261,7 +261,7 @@ mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) =
         }, 500)
     }
 })
-mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
+mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item being absorbed
     let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
     if (config.get("AllowHopperStealing") || (!above.name.includes("wall_sign") && !above.hasContainer())) { // Can't be apart of a lock
         return // Quit the function
