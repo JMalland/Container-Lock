@@ -155,38 +155,6 @@ function afterPlace(player, block) {
     log("Updated sign text.")
 }
 
-function somethingExploded(pos, radius, mm_delay) {
-    let list = new Set() // List of all destroyed locks
-    for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
-        for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
-            for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
-                let block = mc.getBlock(pos.x + x, pos.y + y, pos.z + z, pos.dimid) // Add each block
-                if (!block.name.includes("wall_sign") && !block.hasContainer()) { // The block isn't apart of a lock
-                    continue // Keep going
-                }
-                let lock = getLockPieces(block) // Store the lock components
-                if (getAccessList(lock).length == 0) { // The lock has nobody with access
-                    continue // Keep going
-                }
-                list.add(lock) // Add the block
-                for (let item of [...lock.chests, ...lock.signs]) { // Go through each component
-                    if (item == null) { // Not apart of lock
-                        continue // Keep going
-                    }
-                    mc.setBlock(item.pos, "minecraft:air", 0) // Replace the lock component with air
-                }
-            }
-        }
-    }
-    log("Explosion destroyed " + list.size + " locks!")
-    setTimeout(() => { // Refresh all of the blocks
-        for (let lock of list) { // Go through each block
-            resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
-        }
-    }, 500)
-    return(mm_delay) // Return the list of blocks
-}
-
 // Create the event listeners to run the plugin
 // Detect hopper absorbtion of items from locked entity. Refuse unless locked by main owner
 function initializeListeners() {
@@ -220,18 +188,45 @@ function initializeListeners() {
         return(authenticated || unlocked) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
     mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for explosion destruction
-        if (config.get("TNTGreifing")) { // TNT Greifing is enabled
-            return // Quit the function
+        let list = new Set() // List of all destroyed locks
+        for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
+            for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
+                for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
+                    let block = mc.getBlock(pos.x + x, pos.y + y, pos.z + z, pos.dimid) // Add each block
+                    if (!block.name.includes("wall_sign") && !block.hasContainer()) { // The block isn't apart of a lock
+                        continue // Keep going
+                    }
+                    let lock = getLockPieces(block) // Store the lock components
+                    if (getAccessList(lock).length == 0) { // The lock has nobody with access
+                        continue // Keep going
+                    }
+                    list.add(lock) // Add the block
+                    for (let item of [...lock.chests, ...lock.signs]) { // Go through each component
+                        if (item == null) { // Not apart of lock
+                            continue // Keep going
+                        }
+                        mc.setBlock(item.pos, "minecraft:air", 0) // Replace the lock component with air
+                    }
+                }
+            }
         }
-        log("TNT Explosion")
-        somethingExploded(pos, radius, 500) // Run the Explosion method
-    })
-    mc.listen("onEntityExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for mob destruction
-        if (config.get("MobGreifing")) { // Mob Greifing is enabled
-            return // Quit the function
-        }
-        log("Mob Explosion")
-        somethingExploded(pos, radius, 500) // Run the Explosion method
+        log("Explosion destroyed " + list.size + " locks!")
+        setTimeout(() => { // Refresh all of the blocks
+            for (let lock of list) { // Go through each block
+                resetBlocks(lock.chests) // Replace all the chests (so locked containers not destroyed immediately)
+                if ((config.get("TNTGreifing") && source.includes("TNT")) || config.get("MobGreifing")) { // TNT and/or Mob Greifing is enabled
+                    for (let sign of lock.signs) { // Go through each sign
+                        if (sign == null) { // Not apart of the lock
+                            continue // Keep going    
+                        }
+                        storage.delete(sign.pos.toString()) // Remove the lock from storage
+                        sign.destroy(true) // Destroy the sign
+                    }
+                    continue // Keep going
+                }
+                resetBlocks(lock.signs) // Replace all the signs
+            }
+        }, 500)
     })
     mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
         let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
