@@ -23,7 +23,7 @@ function getLockPieces(block) {
         object.signs = [] // Empty list to store signs
         for (let i=2; i<=5; i++) { // Go through each cardinal direction
             let sign = mc.getBlock(compass[i](chest_one.pos)) // Store the potential sign block
-            if (compass[sign.getBlockState().facing_direction] == null) { // The sign isn't facing the proper direction (isn't apart of this lock)
+            if (compass[sign.getBlockState().facing_direction] == null || sign.getBlockState().facing_direction != i) { // The sign isn't facing the proper direction (isn't apart of this lock)
                 sign = null // Erase the sign from the list
             }
             object.signs.push(sign) // Add the N/S/E/W block relative to the container
