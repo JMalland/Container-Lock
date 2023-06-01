@@ -126,7 +126,7 @@ function blockChanged(before, after) {
     if (access[0].toLowerCase() != "[lock]") { // The sign isn't meant to lock
         return // Quit the function
     }
-    else if (!placedOnContainer(after)) { // The lock-sign isn't placed on a container, or on it's front
+    else if (!placedOnContainer(after) || access.length == 1) { // The lock-sign isn't placed on a container, or on it's front, or there's no players with access
         after.destroy(true) // Break the sign
         return(false) // Quit the function
     }
