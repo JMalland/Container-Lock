@@ -155,7 +155,7 @@ function afterPlace(player, block) {
     log("Updated sign text.")
 }
 
-function getExplodedBlocks(pos, radius) {
+function somethingExploded(pos, radius, mm_delay) {
     let list = new Set() // List of all destroyed locks
     for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
         for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
@@ -178,7 +178,13 @@ function getExplodedBlocks(pos, radius) {
             }
         }
     }
-    return(list) // Return the list of blocks
+    log("Explosion destroyed " + list.length + " locks!")
+    setTimeout(() => { // Refresh all of the blocks
+        for (let lock of list) { // Go through each block
+            resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
+        }
+    }, 500)
+    return(mm_delay) // Return the list of blocks
 }
 
 // Create the event listeners to run the plugin
@@ -217,25 +223,15 @@ function initializeListeners() {
         if (config.get("TNTGreifing")) { // TNT Greifing is enabled
             return // Quit the function
         }
-        let blocks = getExplodedBlocks(pos, radius) // Get all locks that were blown up
-        log("TNT destroyed " + blocks.length + " locks!")
-        setTimeout(() => { // Refresh all of the blocks
-            for (let lock of blocks) { // Go through each block
-                resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
-            }
-        }, 500)
+        log("TNT Explosion")
+        somethingExploded(pos, radius, 500) // Run the Explosion method
     })
     mc.listen("onEntityExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for mob destruction
         if (config.get("MobGreifing")) { // Mob Greifing is enabled
             return // Quit the function
         }
-        let blocks = getExplodedBlocks(pos, radius) // Get all locks that were blown up
-        log("A mob destroyed " + blocks.length + " locks!")
-        setTimeout(() => { // Refresh all of the blocks
-            for (let lock of blocks) { // Go through each block
-                resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
-            }
-        }, 500)
+        log("Mob Explosion")
+        somethingExploded(pos, radius, 500) // Run the Explosion method
     })
     mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
         let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
