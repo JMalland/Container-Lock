@@ -109,7 +109,8 @@ function placedOnContainer(block) {
     if (facing == null || facing < 2 || facing > 5) { // Facing value is invalid
         return(false) // Return false, since something is wrong
     }
-    let target_facing = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)).getBlockState().facing_direction // Store the direction the container is facing
+    let target_block = mc.getBlock(compass[facing + (facing%2 == 0 ? 1 : -1)](block.pos)) // Store the container block
+    let target_facing = target_block.getBlockState().facing_direction // Store the direction the container is facing
     return(target_block.hasContainer() && facing == (compass[target_facing] == null ? facing : target_facing)) // Return whether or not the sign is placed on a container
 }
 
@@ -130,7 +131,7 @@ function blockChanged(before, after) {
         after.destroy(true) // Break the sign
         return(false) // Quit the function
     }
-    object = { // JSON object to be held in storage.json
+    let object = { // JSON object to be held in storage.json
         "sign": after.name, // Record the sign type
         "list": access.slice(1), // Record the access list
     }
@@ -214,13 +215,14 @@ function initializeListeners() {
         setTimeout(() => { // Refresh all of the blocks
             for (let lock of list) { // Go through each block
                 resetBlocks(lock.chests) // Replace all the chests (so locked containers not destroyed immediately)
-                if ((config.get("TNTGreifing") && source.includes("TNT")) || config.get("MobGreifing")) { // TNT and/or Mob Greifing is enabled
+                if ((config.get("TNTGreifing") && source.includes("TNT")) || (config.get("MobGreifing") && !source.includes("TNT"))) { // TNT and/or Mob Greifing is enabled
                     for (let sign of lock.signs) { // Go through each sign
                         if (sign == null) { // Not apart of the lock
                             continue // Keep going    
                         }
                         storage.delete(sign.pos.toString()) // Remove the lock from storage
                         sign.destroy(true) // Destroy the sign
+                        log("Removed Lock.")
                     }
                     continue // Keep going
                 }
