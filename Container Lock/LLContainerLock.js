@@ -4,7 +4,6 @@ var storage = {}
 var config = {}
 
 initializeConfigs()
-initializeListeners()
 
 compass = { // Calculate the position in a given direction
     "2": (pos) => { return(new IntPos(pos.x, pos.y, pos.z - 1, pos.dimid)) }, // North
@@ -61,6 +60,19 @@ function getAccessList(lock) {
     return(access_list) // Return the array
 }
 
+function breakLock(signs) { 
+    for (let sign of signs) { // Go through each sign
+        if (sign == null || storage.get(sign.pos.toString()) == null) { // Not apart of the lock
+            continue // Keep going
+        }
+        storage.delete(sign.pos.toString()) // Remove the lock from storage
+        storage.reload() // Reload the configuration after it's edited
+        sign.destroy(false) // Destroy the sign
+        mc.spawnItem(mc.newItem(sign.name.substring(0, sign.name.indexOf("wall_sign")) + "sign", 1), sign.pos) // Summon a dropped sign
+        log("Removed Lock!")
+    }
+}
+
 // Place each block in the list in place of whatever's at that position, keeping the same NBT tags
 function resetBlocks(blocks) {
     for (let block of blocks) {
@@ -71,6 +83,7 @@ function resetBlocks(blocks) {
         let new_block = mc.getBlock(block.pos) // Update the block
         new_block.setNbt(block.getNbt()) // Update the block NBT (and the facing_direction)
         if (block.hasBlockEntity() && new_block.hasBlockEntity()) { // Can update the block entity
+            log("Updated Block Entity")
             new_block.getBlockEntity().setNbt(block.getBlockEntity().getNbt()) // Update the block entity NBT
         }
     }
@@ -119,7 +132,7 @@ function blockChanged(before, after) {
     if (!after.name.includes("wall_sign")) { // Sign not being placed
         return // Quit the function
     }
-    else if (storage.get(after.pos.toString()) != null) { // The sign is already apart of a lock
+    else if (getAccessList(getLockPieces(after)).length ) { // The sign is already apart of a lock
         resetSign(after, false) // Reset the text if was changed
         return
     }
@@ -128,7 +141,8 @@ function blockChanged(before, after) {
         return // Quit the function
     }
     else if (!placedOnContainer(after) || access.length == 1) { // The lock-sign isn't placed on a container, or on it's front, or there's no players with access
-        after.destroy(true) // Break the sign
+        after.destroy(false) // Break the sign
+        mc.spawnItem(mc.newItem(after.name.substring(0, after.name.indexOf("wall_sign")) + "sign", 1), after.pos) // Summon a dropped sign
         return(false) // Quit the function
     }
     let object = { // JSON object to be held in storage.json
@@ -148,7 +162,14 @@ function afterPlace(player, block) {
     let access_list = getAccessList(lock) // Store the list of players with access
     if (!(access_list.includes(player.name) || access_list.length == 0)) { // A lock exists and the player doesn't have access
         log("Lock already exists! You're trying to bypass it!")
-        return // Quit the function
+        mc.spawnItem(mc.newItem(block.name.substring(0, block.name.indexOf("walL_sign")) + "sign", 1), block.pos) // Summon a dropped sign
+        if (storage.get(block.pos.toString()) != null) { // Block is apart of a lock
+            resetSign(block) // Reset the sign
+        }
+        else { // Block isn't apart of a lock
+            block.destroy(false) // Break the sign
+        }
+        return // Quit the function (without interrupting in case lock-sign gets replaced)
     }
     let entity = block.getBlockEntity().getNbt() // Store the entity NBT
     entity.setString("Text", "") // Set the text of the sign, just to trigger the 'blockChanged' function
@@ -156,102 +177,105 @@ function afterPlace(player, block) {
     log("Updated sign text.")
 }
 
+// Need to detect lock sign addition to locked containers without access (allow non-lock signs)
+// Need to prevent hopper outputting to locked containers without access
+// Need to store users in permissions.json and do Username based off of xuid
+
 // Create the event listeners to run the plugin
-// Detect hopper absorbtion of items from locked entity. Refuse unless locked by main owner
-function initializeListeners() {
-    mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
-    mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
-    mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
-        let access_list = getAccessList(getLockPieces(block)) // Store the players with access to the lock (if lock exists)
-        return(access_list.includes(player.name) || access_list.length == 0) // Allow the player access to the container if not 'locked'
-    })
-    mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
-        if (!block.name.includes("wall_sign") && !block.hasContainer()) { // Block can't be apart of a lock
-            log("Ignored Destruction")
-            return // Quit the function
-        }
-        let lock = getLockPieces(block) // Store the lock chests/signs
-        let access_list = getAccessList(lock) // Store the players with access to the lock
-        let authenticated = access_list.includes(player.name) // Determine if the player has access
-        let unlocked = access_list.length == 0 // Whether or not the lock is unlocked
-        for (let sign of lock.signs) { // Go through each sign (once more)
-            if (!(config.get("PlayerGreifing") || (config.get("AdminGreifing") && player.isOP())) && (sign == null || !authenticated)) { // Not apart of the lock, or player doesn't have access
-                log("Skipped Sign")
-                continue // Keep going
-            }
-            storage.delete(sign.pos.toString()) // Remove the lock from storage
-            sign.destroy(true) // Destroy the sign
-            log("Removed Lock.")
-        }
-        if (!authenticated && !unlocked) { // The lock wasn't destroyed
-            setTimeout(() => { // Re-connect all chests in real time
-                log("Reset Blocks")
-                resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
-            }, 500)
-        }
-        log("Destroyed Block: " + (authenticated || unlocked))
-        return(authenticated || unlocked) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
-    })
-    // Explosion takes 2 attempts to break the lock. --> Destroys the onDestroyBlock listener
-    mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for explosion destruction
-        let list = new Set() // List of all destroyed locks
-        for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
-            for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
-                for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
-                    let block = mc.getBlock(pos.x + x, pos.y + y, pos.z + z, pos.dimid) // Add each block
-                    if (!block.name.includes("wall_sign") && !block.hasContainer()) { // The block isn't apart of a lock
+mc.listen("onBlockChanged", blockChanged) // Listen for sign block changed
+mc.listen("afterPlaceBlock", afterPlace) // Listen for sign block placed
+mc.listen("onOpenContainer", (player, block) => { // Listen for player opening container
+    let access_list = getAccessList(getLockPieces(block)) // Store the players with access to the lock (if lock exists)
+    return(access_list.includes(player.name) || access_list.length == 0) // Allow the player access to the container if not 'locked'
+})
+mc.listen("onDestroyBlock", (player, block) => { // Listen for chest or sign destruction
+    if (!block.name.includes("wall_sign") && !block.hasContainer()) { // Block can't be apart of a lock
+        log("Ignored Destruction")
+        return // Quit the function
+    }
+    let lock = getLockPieces(block) // Store the lock chests/signs
+    let access_list = getAccessList(lock) // Store the players with access to the lock
+    let authenticated = access_list.includes(player.name) // Determine if the player has access
+    if (access_list.length == 0) { // The lock doesn't exist
+        log("Unlocked container!")
+        return // Quit the function
+    }
+    setTimeout(() => { // Re-connect all the chests
+        resetBlocks(lock.chests) // Replace all the chests
+    }, 500)
+    if (authenticated || config.get("PlayerGreifing") || (config.get("AdminGreifing") && player.isOP())) { // Player is authenticated, or greifing is enabled
+        log("Destroyed lock!")
+        breakLock(lock.signs) // Destroy the lock-signs on the lock
+    }
+    else { // The Player isn't authenticated, and no greifing is enabled
+        log("Protected lock!")
+        setTimeout(() => { // Re-connect all signs
+            resetBlocks(lock.signs) // Replace all the signs
+        }, 500)
+    }
+    return(false) // Don't break the block because the lock was destroyed
+})
+// Explosion takes 2 attempts to break the lock. --> Destroys the onDestroyBlock listener
+mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for explosion destruction
+    let list = new Set() // List of all destroyed locks
+    for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
+        for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
+            for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
+                let block = mc.getBlock(pos.x + x, pos.y + y, pos.z + z, pos.dimid) // Add each block
+                if (!block.name.includes("wall_sign") && !block.hasContainer()) { // The block isn't apart of a lock
+                    continue // Keep going
+                }
+                let lock = getLockPieces(block) // Store the lock components
+                log(block.name)
+                log(block.pos)
+                if (getAccessList(lock).length == 0) { // The lock has nobody with access
+                    continue // Keep going
+                }
+                list.add(lock) // Add the block
+                for (let item of [ ...lock.chests, ...lock.signs ]) { // Go through each component
+                    if (item == null) { // Not apart of lock
                         continue // Keep going
                     }
-                    let lock = getLockPieces(block) // Store the lock components
-                    if (getAccessList(lock).length == 0) { // The lock has nobody with access
-                        continue // Keep going
-                    }
-                    list.add(lock) // Add the block
-                    for (let item of [...lock.chests, ...lock.signs]) { // Go through each component
-                        if (item == null) { // Not apart of lock
-                            continue // Keep going
-                        }
-                        mc.setBlock(item.pos, "minecraft:air", 0) // Replace the lock component with air
-                    }
+                    mc.setBlock(item.pos, "minecraft:air", 0) // Replace the lock component with air
                 }
             }
         }
+    }
+    setTimeout(() => { // Re-connect all the chests
+        for (let lock of list) { // Go through each lock
+            resetBlocks(lock.chests) // Replace all the chests
+        }
+    }, 500)
+    if ((config.get("TNTGreifing") && source.toString().includes("TNT")) || (config.get("MobGreifing") && !source.toString().includes("TNT"))) { // TNT and Mob Greifing are enabled
         log("Explosion destroyed " + list.size + " locks!")
-        setTimeout(() => { // Refresh all of the blocks
-            for (let lock of list) { // Go through each block
-                resetBlocks(lock.chests) // Replace all the chests (so locked containers not destroyed immediately)
-                if ((config.get("TNTGreifing") && source.toString().includes("TNT")) || (config.get("MobGreifing") && !source.toString().includes("TNT"))) { // TNT and Mob Greifing are enabled
-                    for (let sign of lock.signs) { // Go through each sign
-                        if (sign == null || storage.get(sign.pos.toString()) == null) { // Not apart of the lock
-                            continue // Keep going    
-                        }
-                        storage.delete(sign.pos.toString()) // Remove the lock from storage
-                        sign.destroy(true) // Destroy the sign --> Causes Infinite Loop ????????
-                        log("Removed Lock.")
-                    }
-                }
-                else { // TNT and Mob Greifing are disabled
-                    resetBlocks(lock.signs) // Replace all the signs
-                }
+        for (let lock of list) { // Go through each lock
+            breakLock(lock.signs) // Destroy the lock-signs on the lock
+        }
+    }
+    else { // TNT and Mob Greifing are disabled
+        log("Prevented explosion of " + list.size + " locks!")
+        setTimeout(() => { // Re-connect all the signs
+            for (let lock of list) { // Go through each lock
+                resetBlocks(lock.signs) // Replace all the signs
             }
         }, 500)
-    })
-    mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
-        let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
-        if (config.get("AllowHopperStealing") || (!above.name.includes("wall_sign") && !above.hasContainer())) { // Can't be apart of a lock
-            return // Quit the function
-        }
-        let access_list = getAccessList(getLockPieces(above)) // Get the list of players with access to the lock above the minecart (if exists)
-        if (access_list.size == 0) { // No players listed on the lock (if exists at all) 
-            return // Quit the function
-        }
-        else if (isMinecart) { // Block above is locked, and trying to drain into Minecart
-            return(false) // Can't lock a minecart
-        }
-        let hopper_access = getAccessList(getLockPieces(mc.getBlock(pos))) // Get the list of players with access to the hopper (if exists)
-        return(("" + access_list) == ("" + hopper_access)) // Return whether or not the hopper should absorb items from the locked chest
-    })
-}
+    }
+})
+mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
+    let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
+    if (config.get("AllowHopperStealing") || (!above.name.includes("wall_sign") && !above.hasContainer())) { // Can't be apart of a lock
+        return // Quit the function
+    }
+    let access_list = getAccessList(getLockPieces(above)) // Get the list of players with access to the lock above the minecart (if exists)
+    if (access_list.size == 0) { // No players listed on the lock (if exists at all) 
+        return // Quit the function
+    }
+    else if (isMinecart) { // Block above is locked, and trying to drain into Minecart
+        return(false) // Can't lock a minecart
+    }
+    let hopper_access = getAccessList(getLockPieces(mc.getBlock(pos))) // Get the list of players with access to the hopper (if exists)
+    return(("" + access_list) == ("" + hopper_access)) // Return whether or not the hopper should absorb items from the locked chest
+})
 
 // Create the configuration files for the plugin
 // Should implement grief prevention
