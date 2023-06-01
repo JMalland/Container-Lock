@@ -24,7 +24,6 @@ function getLockPieces(block) {
         object.signs = [] // Empty list to store signs
         for (let i=2; i<=5; i++) { // Go through each cardinal direction
             let sign = mc.getBlock(compass[i](chest_one.pos)) // Store the potential sign block
-            //sign.pos = compass[i](chest_one.pos) // Update the PosInt value of the block
             if (compass[sign.getBlockState().facing_direction] == null) { // The sign isn't facing the proper direction (isn't apart of this lock)
                 sign = null // Erase the sign from the list
             }
@@ -58,7 +57,7 @@ function getAccessList(lock) {
             access_list.push(player)
         }
     }
-    access_list.sort() // Sort the array
+    access_list.sort() // Sort the array (just for string comparison)
     return(access_list) // Return the array
 }
 
@@ -70,7 +69,7 @@ function resetBlocks(blocks) {
         }
         mc.setBlock(block.pos, block.name, 0) // Replace whatever's at the position with the proper block
         let new_block = mc.getBlock(block.pos) // Update the block
-        new_block.setNbt(block.getNbt()) // Update the block NBT ( ? and the facing_direction ? )
+        new_block.setNbt(block.getNbt()) // Update the block NBT (and the facing_direction)
         if (block.hasBlockEntity() && new_block.hasBlockEntity()) { // Can update the block entity
             new_block.getBlockEntity().setNbt(block.getBlockEntity().getNbt()) // Update the block entity NBT
         }
@@ -156,9 +155,8 @@ function afterPlace(player, block) {
     log("Updated sign text.")
 }
 
-function getExplodedBlocks(pos, radius, maxResist) {
-    let list = []
-    log(maxResist)
+function getExplodedBlocks(pos, radius) {
+    let list = [] // List of all destroyed locks
     for (let x=-1 * radius; x<=radius; x++) { // Go through the Math.abs(x) change
         for (let y=-1 * radius; y<=radius; y++) { // Go through the Math.abs(y) change
             for (let z=-1 * radius; z<=radius; z++) { // Go through the Math.abs(z) change
@@ -210,24 +208,22 @@ function initializeListeners() {
         }
         if (!authenticated && !unlocked) { // The lock wasn't destroyed
             setTimeout(() => { // Re-connect all chests in real time
-                resetBlocks(lock.chests) // Replace all the chests
-                resetBlocks(lock.signs) // Replace all the signs
+                resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
             }, 500)
         }
         return(authenticated || unlocked) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
     mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for any explosion destruction
         log("Exploded Block")
-        let blocks = getExplodedBlocks(pos, radius, maxResistance)
+        let blocks = getExplodedBlocks(pos, radius)
         log("Locks Destroyed: " + blocks.length)
-        // Erase all lock-chest contents, and set blocks to air before replacing them, just so drops don't fall
-        setTimeout(() => {
-            // Replace blocks after delay
-            for (let lock of blocks) { // Go through each block
-                resetBlocks(lock.chests) // Replace each chest
-                resetBlocks(lock.signs) // Replace each sign
-            }
-        }, 500)
+        if (!config.get("TNTGreifing")) { // TNT Greifing isn't allowed
+            setTimeout(() => { // Refresh all of the blocks
+                for (let lock of blocks) { // Go through each block
+                    resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
+                }
+            }, 500)
+        }
     })
     mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
         let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
