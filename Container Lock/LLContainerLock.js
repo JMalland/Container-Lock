@@ -213,17 +213,29 @@ function initializeListeners() {
         }
         return(authenticated || unlocked) // Quit the function, breaking the block since player had access, or wasn't apart of a lock
     })
-    mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for any explosion destruction
-        log("Exploded Block")
-        let blocks = getExplodedBlocks(pos, radius)
-        log("Locks Destroyed: " + blocks.length)
-        if (!config.get("TNTGreifing")) { // TNT Greifing isn't allowed
-            setTimeout(() => { // Refresh all of the blocks
-                for (let lock of blocks) { // Go through each block
-                    resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
-                }
-            }, 500)
+    mc.listen("onExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for explosion destruction
+        if (config.get("TNTGreifing")) { // TNT Greifing is enabled
+            return // Quit the function
         }
+        let blocks = getExplodedBlocks(pos, radius) // Get all locks that were blown up
+        log("TNT destroyed " + blocks.length + " locks!")
+        setTimeout(() => { // Refresh all of the blocks
+            for (let lock of blocks) { // Go through each block
+                resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
+            }
+        }, 500)
+    })
+    mc.listen("onEntityExplode", (source, pos, radius, maxResistance, isDestroy, isFire) => { // Listen for mob destruction
+        if (config.get("MobGreifing")) { // Mob Greifing is enabled
+            return // Quit the function
+        }
+        let blocks = getExplodedBlocks(pos, radius) // Get all locks that were blown up
+        log("A mob destroyed " + blocks.length + " locks!")
+        setTimeout(() => { // Refresh all of the blocks
+            for (let lock of blocks) { // Go through each block
+                resetBlocks([...lock.chests, ...lock.signs]) // Replace all the chests and signs
+            }
+        }, 500)
     })
     mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hopper item movement
         let above = mc.getBlock(pos.x, pos.y + 1, pos.z, pos.dimid) // Try to get the block above the minecart
