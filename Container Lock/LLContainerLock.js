@@ -262,6 +262,23 @@ mc.listen("onHopperSearchItem", (pos, isMinecart, item) => { // Listen for hoppe
     let hopper_access = getAccessList(getLockPieces(mc.getBlock(pos))) // Get the list of players with access to the hopper (if exists)
     return(("" + access_list) == ("" + hopper_access)) // Return whether or not the hopper should absorb items from the locked chest
 })
+mc.listen("onHopperPushOut", (pos, isMinecart, item) => { // Listen for hopper output
+    let hopper = mc.getBlock(pos) // Store the hopper
+    let facing = hopper.getBlockState().facing_direction // Store the facing direction
+    let block = isMinecart || facing < 2 ? mc.getBlock(pos.x, pos.y - 1, pos.z, pos.dimid) : mc.getBlock(compass[facing](pos)) // Get the chest being added to
+    if (config.get("AllowHopperStealing")) { // Hopper stealing is enabled
+        return // Quit the function
+    }
+    let access_list = getAccessList(getLockPieces(block)) // Get the list of players with access to the lock
+    if (access_list.size == 0) { // No players listed on the lock (if locked)
+        return // Quit the function
+    }
+    else if (isMinecart) { // The hopper is a minecart, going into a locked container
+        return(false) // Can't lock a minecart
+    }
+    let hopper_access = getAccessList(getLockPieces(pos)) // Get the list of players with access to the hopper
+    return(("" + access_list) == ("" + hopper_access)) // Return whether the lists have the same players
+})
 
 // Create the configuration files for the plugin
 function initializeConfigs() {
